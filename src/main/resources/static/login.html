@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Explore Bangladesh</title>
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+            crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 0;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .login-body {
+            padding: 40px;
+        }
+
+        .form-control {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+        }
+
+        .password-input {
+            position: relative;
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .forgot-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .signup-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .signup-link:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .divider span {
+            padding: 0 15px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .social-btn {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .social-btn:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .remember-me {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center align-items-center">
+            <div class="col-lg-5 col-md-8">
+                <div class="login-card">
+                    <div class="login-header">
+                        <h4>Welcome Back</h4>
+                        <p class="mb-0">Sign in to continue your journey</p>
+                    </div>
+
+                    <div class="login-body">
+                        <form id="loginForm" onsubmit="return handleLogin(event)">
+                            <div class="mb-4">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" required
+                                       placeholder="Enter your email">
+                            </div>
+
+                            <div class="mb-3 password-input">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" required
+                                       placeholder="Enter your password">
+                                <span class="password-toggle" onclick="togglePassword('password')">
+                                        <i class="bi bi-eye"></i>
+                                    </span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="rememberMe">
+                                    <label class="form-check-label remember-me" for="rememberMe">
+                                        Remember me
+                                    </label>
+                                </div>
+                                <a href="/forgot-password.html" class="forgot-link">Forgot password?</a>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 login-btn mb-3">
+                                Sign In
+                            </button>
+
+                            <div class="text-center mb-4">
+                                <p class="mb-0">Don't have an account?
+                                    <a href="/signup.html" class="signup-link">Sign up</a>
+                                </p>
+                            </div>
+
+                            <div class="divider">
+                                <span>Or continue with</span>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <button type="button" class="btn w-100 social-btn" onclick="socialLogin('google')">
+                                        <i class="bi bi-google me-2"></i> Google
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn w-100 social-btn" onclick="socialLogin('facebook')">
+                                        <i class="bi bi-facebook me-2"></i> Facebook
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning" role="alert">
+                                <small>
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    By signing in, you agree to our <a href="#" class="forgot-link">Terms of Service</a>
+                                    and <a href="#" class="forgot-link">Privacy Policy</a>.
+                                </small>
+                            </div>
+                        </form>
+
+                        <div class="text-center mt-4">
+                            <p class="text-muted small mb-2">Having trouble signing in?</p>
+                            <a href="/contact.html" class="forgot-link">Contact Support</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = input.nextElementSibling.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    }
+
+    async function handleLogin(event) {
+        event.preventDefault();
+
+        const loginData = {
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            rememberMe: document.getElementById('rememberMe').checked
+        };
+
+        // Show loading state
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Signing in...';
+        submitBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(loginData)
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                // Store token in localStorage
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                // Store remember me preference
+                if (loginData.rememberMe) {
+                    localStorage.setItem('rememberEmail', loginData.email);
+                } else {
+                    localStorage.removeItem('rememberEmail');
+                }
+
+                // Redirect to home page
+                window.location.href = '/';
+
+            } else {
+                const error = await response.text();
+                alert('Login failed: ' + error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Network error. Please check your connection and try again.');
+        } finally {
+            // Reset button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+
+        return false;
+    }
+
+    function socialLogin(provider) {
+        alert(`Social login with ${provider} would be implemented here.`);
+        // In production, this would redirect to OAuth endpoint
+        // window.location.href = `/oauth2/authorization/${provider}`;
+    }
+
+    // Auto-fill remember me email
+    document.addEventListener('DOMContentLoaded', function() {
+        const rememberedEmail = localStorage.getItem('rememberEmail');
+        if (rememberedEmail) {
+            document.getElementById('email').value = rememberedEmail;
+            document.getElementById('rememberMe').checked = true;
+        }
+
+        // Check for demo mode suggestion
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('demo') === 'true') {
+            document.getElementById('email').value = 'demo@explorebangladesh.com';
+            document.getElementById('password').value = 'demo123';
+            document.getElementById('rememberMe').checked = true;
+        }
+
+        // Add enter key submission
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('loginForm').requestSubmit();
+            }
+        });
+    });
+
+    // Auto-logout after 24 hours if remember me is not checked
+    function checkAutoLogout() {
+        const token = localStorage.getItem('token');
+        const rememberMe = localStorage.getItem('rememberEmail');
+
+        if (token && !rememberMe) {
+            const loginTime = localStorage.getItem('loginTime');
+            if (loginTime) {
+                const hoursSinceLogin = (Date.now() - parseInt(loginTime)) / (1000 * 60 * 60);
+                if (hoursSinceLogin > 24) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login.html?expired=true';
+                }
+            }
+        }
+    }
+
+    // Run auto-logout check
+    checkAutoLogout();
+</script>
+
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"
+></script>
+</body>
+</html>
