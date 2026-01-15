@@ -1,3 +1,14 @@
+/* Offcanvas sidebar styles */
+.offcanvas {
+    width: 240px !important;
+    top: 0 !important;
+    height: 100vh !important;
+}
+
+.offcanvas-backdrop {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
 main {
     height: 70vh;
     margin: 0;
@@ -30,7 +41,8 @@ main {
     overflow: hidden;
 }
 
-.search-box-card .nav-tabs {
+/* Search tabs and forms */
+.search-tabs {
     border-bottom: 1px solid #dee2e6;
     padding: 0 1rem;
 }
@@ -73,21 +85,9 @@ main {
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
 }
 
-.search-box {
-    margin-top: 2rem;
-}
-
-.search-box input {
-    border-radius: 50px;
-    padding: 1rem 1.5rem;
-    border: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.search-box button {
-    border-radius: 50px;
-    padding: 0.75rem 2.5rem;
-    font-weight: 600;
+/* Menu toggle button */
+.menu-toggle {
+    border: none !important;
 }
 
 .card {
@@ -101,6 +101,7 @@ main {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
+/* Header and navigation */
 header {
     background-color: #fff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -109,6 +110,14 @@ header {
     left: 0;
     right: 0;
     z-index: 1000;
+}
+
+.navbar-container {
+    max-width: 100%;
+}
+
+.main-navigation {
+    flex-grow: 1;
 }
 
 body {
@@ -238,7 +247,6 @@ body.offcanvas-open .footer {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    animation: badgePulse 2s ease-in-out infinite;
 }
 
 .package-badge.trending {
@@ -293,16 +301,6 @@ body.offcanvas-open .footer {
     font-size: 1.5rem;
     font-weight: 700;
     color: #0d6efd;
-    animation: priceShine 3s ease-in-out infinite;
-}
-
-@keyframes priceShine {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.8;
-    }
 }
 
 .package-title {
