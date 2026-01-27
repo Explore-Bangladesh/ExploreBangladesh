@@ -16,7 +16,8 @@ spring.security.user.name=test
 spring.security.user.password=test
 
 # Geoapify API Configuration
-geoapify.api.key=2a42881f098048d7ae41b52f7c540f33
+# Get your API key from: https://www.geoapify.com/
+geoapify.api.key=YOUR_API_KEY_HERE
 geoapify.base-url=https://api.geoapify.com/v2/places
 
 # Country settings
