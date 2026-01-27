@@ -16,12 +16,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configure(http)) // Enable CORS
             .csrf(csrf -> csrf.disable()) // Disable CSRF for API endpoints
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/**").permitAll() // Allow all API endpoints
-                .requestMatchers("/hotels.html", "/js/**", "/css/**", "/images/**").permitAll() // Allow static resources
+                .requestMatchers("/hotels.html", "/flights.html", "/js/**", "/css/**", "/images/**", "/styles.css").permitAll() // Allow static resources
                 .requestMatchers("/", "/index.html", "/login.html", "/signup.html").permitAll() // Allow public pages
-                .anyRequest().authenticated() // All other requests need authentication
+                .anyRequest().permitAll() // Allow all requests for now
             );
         
         return http.build();
