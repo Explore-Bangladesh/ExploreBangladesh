@@ -20,6 +20,11 @@ spring.security.user.password=test
 geoapify.api.key=YOUR_API_KEY_HERE
 geoapify.base-url=https://api.geoapify.com/v2/places
 
+# Amadeus API Configuration (Flights)
+amadeus.api.key=YOUR_API_KEY_HERE
+amadeus.api.secret=YOUR_API_SECRET_HERE
+amadeus.base-url=https://test.api.amadeus.com
+
 # Country settings
 hotels.country.code=BD
 hotels.country.name=Bangladesh
