@@ -31,3 +31,32 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+*.log
+logs/
+
+### OS Files ###
+.DS_Store
+Thumbs.db
+desktop.ini
+
+### Environment & Secrets ###
+*.env
+.env.local
+.env.*.local
+application-local.properties
+application-secrets.properties
+
+### Package Files ###
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+### H2 Database Files ###
+*.db
+*.mv.db
+*.trace.db
