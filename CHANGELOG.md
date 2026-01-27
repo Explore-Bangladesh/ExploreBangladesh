@@ -1,104 +1,137 @@
 # ExploreBangladesh - Recent Updates
 
-## Version 1.1.0 - January 27, 2026
+## Version 1.2.0 - January 27, 2026
 
-### 🗺️ New Features
+### ✈️ New Feature: Flight Search (Amadeus API)
 
-#### Interactive Map View (Leaflet.js)
-- Added **"View in a map"** feature like Hotels.com
-- Static map preview in sidebar (powered by Geoapify)
-- Click to open full interactive map modal
-- Hotel markers with popups showing name, address, and "View Details" button
-- Map auto-zooms to fit all hotel locations
+#### Flight Search Page (`flights.html`)
+- **Real flight data** from Amadeus Flight Offers Search API
+- Search flights between 8 Bangladesh airports + 10 international destinations
+- **One-way and Round-trip** options with toggle buttons
+- Swap origin/destination with single click
+- Flight cards showing:
+  - Airline name & logo
+  - Departure/arrival times
+  - Flight duration & stops
+  - Price in BDT (৳)
+  - "Select" button (opens Google booking search)
 
-#### Enhanced Hotel Details
-- "View Details" now performs a **Google search** for the hotel
-- Search includes destination for better accuracy (e.g., "Hotel Name hotel Dhaka Bangladesh")
+#### Supported Airports
+| Bangladesh (8) | International (10) |
+|----------------|-------------------|
+| Dhaka (DAC) | Dubai (DXB) |
+| Chittagong (CGP) | Singapore (SIN) |
+| Cox's Bazar (CXB) | Bangkok (BKK) |
+| Sylhet (ZYL) | Kuala Lumpur (KUL) |
+| Rajshahi (RJH) | Delhi (DEL) |
+| Jessore (JSR) | Kolkata (CCU) |
+| Saidpur (SPD) | Doha (DOH) |
+| Barishal (BZL) | Jeddah (JED) |
+| | London (LHR) |
+| | New York (JFK) |
 
-#### Expanded District Support
-Added support for the following districts:
-| District | Coordinates |
-|----------|-------------|
-| Dhaka | 90.4125, 23.8103 |
-| Cox's Bazar | 91.9670, 21.4272 |
-| Chittagong | 91.7832, 22.3569 |
-| Sylhet | 91.8687, 24.8949 |
-| Khulna | 89.5690, 22.8456 |
-| Rajshahi | 88.6042, 24.3745 |
-| Rangpur | 89.2517, 25.7439 |
-| Barishal | 90.3667, 22.7010 |
-| Mymensingh | 90.4066, 24.7471 |
-| Rangamati | 92.1821, 22.6372 |
-| Bandarban | 92.2184, 22.1953 |
-| **Tangail** *(new)* | 89.9168, 24.2513 |
-
----
-
-### 🎨 UI/UX Improvements
-
-#### Homepage
-- Date fields auto-fill with tomorrow (check-in) and day after (check-out)
-- Search form redirects to hotels.html with URL parameters
-- Destination datalist updated with all supported districts
-
-#### Hotels Page
-- **Removed filter sidebar** (Price Range, Star Rating, Sort By)
-- Added **Hotels.com style map preview** card in sidebar
-- Layout changed to `container-fluid` for full-width display
-- Map preview column: `col-lg-2`, Hotels grid: `col-lg-10`
-- Footer now sticks to bottom of page
-
-#### Hotel Cards
-- Removed fake ratings and pricing (Geoapify doesn't provide this data)
-- Clean card design with hotel image, name, address, and amenity badges
-- Curated Unsplash images for hotel cards
+#### Homepage Integration
+- Flights tab now has **proper airport dropdowns**
+- Swap button, travelers select, departure date
+- Search redirects to flights.html with auto-search
 
 ---
 
 ### 🔧 Technical Changes
 
-#### Files Modified
-- `hotels.html` - Map modal, Leaflet.js integration, layout changes
-- `hotels.js` - Map functionality, search improvements, removed filter references
-- `index.html` - Date autofill, search redirect, updated datalist
-- `HotelsApiService.java` - Added new district coordinates
-- `application.properties` - H2 database configuration
-- `.gitignore` - Added common exclusions
+#### New Backend Files
+- `FlightsApiService.java` - Amadeus OAuth + flight search
+- `FlightsController.java` - REST endpoint `/api/flights/search`
+- `FlightSearchRequest.java` - Request DTO
+- `FlightSearchResponse.java` - Response DTO with nested classes
+- `CorsConfig.java` - CORS support for Live Server
 
-#### Dependencies Added
-- **Leaflet.js 1.9.4** - Interactive maps (CDN)
-- Uses **OpenStreetMap** tiles (free, no API key needed)
+#### New Frontend Files
+- `flights.html` - Flight search page
+- `flights.js` - Search logic, URL param handling, card rendering
 
-#### API
-- Geoapify Places API for hotel data
-- Geoapify Static Maps API for map preview image
-- No new API keys required
-
----
-
-### 📝 Notes for Team
-
-1. **Database**: Using H2 in-memory database (data resets on restart)
-2. **Map Feature**: Completely free - uses Leaflet.js + OpenStreetMap
-3. **Adding New Districts**: Add coordinates to `CITY_COORDS` map in `HotelsApiService.java`
-4. **Hotel Images**: Currently using curated Unsplash URLs; hybrid PostgreSQL system planned
+#### Updated Files
+- `index.html` - Flights tab with dropdowns, redirect logic
+- `SecurityConfig.java` - Added flights.html to permitted resources
+- `application.properties.template` - Added Amadeus API placeholders
 
 ---
 
-### 🐛 Bug Fixes
-- Fixed search error caused by referencing deleted filter elements
-- Fixed 403 errors for Rangamati and Bandarban (missing coordinates)
-- Fixed hotel cards image display consistency
+### 🔐 Security Notes
+
+> **IMPORTANT**: `application.properties` is in `.gitignore` and will NOT be pushed.
+
+Your teammates need to:
+1. Copy `application.properties.template` to `application.properties`
+2. Replace `YOUR_API_KEY_HERE` with actual API keys
+
+API Keys needed:
+- **Geoapify** (Hotels): https://www.geoapify.com/
+- **Amadeus** (Flights): https://developers.amadeus.com/
+
+---
+
+## Version 1.1.0 - January 27, 2026
+
+### 🏨 Hotel Search (Geoapify API)
+
+#### Hotel Search Page (`hotels.html`)
+- **Real hotel data** from Geoapify Places API
+- Search hotels across 12 Bangladesh districts
+- Hotel cards with curated images, names, and addresses
+- "View Details" opens Google search for booking
+
+#### Interactive Map View (Leaflet.js)
+- **"View in a map"** feature like Hotels.com
+- Static map preview in sidebar (Geoapify Static Maps)
+- Full interactive map modal with hotel markers
+- Click markers for hotel info popups
+- Auto-zoom to fit all hotel locations
+
+#### Supported Districts
+| District | District | District |
+|----------|----------|----------|
+| Dhaka | Cox's Bazar | Chittagong |
+| Sylhet | Khulna | Rajshahi |
+| Rangpur | Barishal | Mymensingh |
+| Rangamati | Bandarban | Tangail |
+
+#### Homepage Integration
+- Hotels tab with destination autocomplete
+- Check-in/Check-out date pickers (auto-filled)
+- Guest count selector
+- Search redirects to hotels.html with auto-search
+
+---
+
+### 🔧 Technical Changes (v1.1.0)
+
+#### Backend Files
+- `HotelsApiService.java` - Geoapify API integration
+- `HotelsController.java` - REST endpoint `/api/hotels/search`
+- `HotelSearchRequest.java` / `HotelSearchResponse.java` - DTOs
+- `SecurityConfig.java` - Spring Security configuration
+
+#### Frontend Files
+- `hotels.html` - Hotel search page with map modal
+- `hotels.js` - Search logic, map integration, card rendering
+
+#### Dependencies
+- **Leaflet.js 1.9.4** - Interactive maps (CDN, no API key)
+- **OpenStreetMap** tiles for map display
 
 ---
 
 ## How to Run
 
 ```bash
-# Start the application
+# 1. Copy template and add your API keys
+copy application.properties.template src\main\resources\application.properties
+
+# 2. Start the application
 .\mvnw.cmd spring-boot:run
 
-# Access at
+# 3. Access at
 http://localhost:8080
 ```
 

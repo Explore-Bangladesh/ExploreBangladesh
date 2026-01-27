@@ -25,7 +25,7 @@
       <nav class="main-navigation d-none d-lg-block">
         <ul class="nav justify-content-center">
           <li><a href="hotels.html" class="nav-link px-2 text-dark">Hotels</a></li>
-          <li><a href="#" class="nav-link px-2 text-dark">Flights</a></li>
+          <li><a href="flights.html" class="nav-link px-2 text-dark">Flights</a></li>
           <li><a href="#" class="nav-link px-2 text-dark">Cars</a></li>
           <li><a href="#" class="nav-link px-2 text-dark">Packages</a></li>
           <li><a href="#" class="nav-link px-2 text-dark">Travel Guide</a></li>
@@ -47,8 +47,8 @@
     </div>
     <div class="offcanvas-body">
       <ul class="list-unstyled">
-        <li><a class="dropdown-item py-2" href="#" aria-current="page">Hotels</a></li>
-        <li><a class="dropdown-item py-2" href="#">Flights</a></li>
+        <li><a class="dropdown-item py-2" href="hotels.html" aria-current="page">Hotels</a></li>
+        <li><a class="dropdown-item py-2" href="flights.html">Flights</a></li>
         <li><a class="dropdown-item py-2" href="#">Cars</a></li>
         <li><a class="dropdown-item py-2" href="#">Travel Guide</a></li>
         <li>
@@ -176,23 +176,120 @@
             </script>
           </div>
           <div class="tab-pane fade" id="flights" role="tabpanel" aria-labelledby="flights-tab">
-            <div class="row g-3">
-              <div class="col-md-5">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-3">
                 <label class="form-label">From</label>
-                <input type="text" class="form-control" placeholder="Departure city">
+                <select class="form-select" id="homeFlightOrigin">
+                  <optgroup label="Bangladesh">
+                    <option value="DAC" selected>Dhaka (DAC)</option>
+                    <option value="CGP">Chittagong (CGP)</option>
+                    <option value="CXB">Cox's Bazar (CXB)</option>
+                    <option value="ZYL">Sylhet (ZYL)</option>
+                    <option value="RJH">Rajshahi (RJH)</option>
+                    <option value="JSR">Jessore (JSR)</option>
+                    <option value="SPD">Saidpur (SPD)</option>
+                    <option value="BZL">Barishal (BZL)</option>
+                  </optgroup>
+                  <optgroup label="International">
+                    <option value="DXB">Dubai (DXB)</option>
+                    <option value="SIN">Singapore (SIN)</option>
+                    <option value="BKK">Bangkok (BKK)</option>
+                    <option value="KUL">Kuala Lumpur (KUL)</option>
+                    <option value="DEL">Delhi (DEL)</option>
+                    <option value="CCU">Kolkata (CCU)</option>
+                    <option value="DOH">Doha (DOH)</option>
+                    <option value="JED">Jeddah (JED)</option>
+                    <option value="LHR">London (LHR)</option>
+                    <option value="JFK">New York (JFK)</option>
+                  </optgroup>
+                </select>
               </div>
-              <div class="col-md-5">
+              <div class="col-auto d-flex align-items-center pb-2">
+                <button type="button" class="btn btn-light rounded-circle" onclick="swapFlightAirports()"
+                  style="width: 40px; height: 40px;">
+                  ⇄
+                </button>
+              </div>
+              <div class="col-md-3">
                 <label class="form-label">To</label>
-                <input type="text" class="form-control" placeholder="Destination city">
+                <select class="form-select" id="homeFlightDest">
+                  <optgroup label="Bangladesh">
+                    <option value="DAC">Dhaka (DAC)</option>
+                    <option value="CGP">Chittagong (CGP)</option>
+                    <option value="CXB" selected>Cox's Bazar (CXB)</option>
+                    <option value="ZYL">Sylhet (ZYL)</option>
+                    <option value="RJH">Rajshahi (RJH)</option>
+                    <option value="JSR">Jessore (JSR)</option>
+                    <option value="SPD">Saidpur (SPD)</option>
+                    <option value="BZL">Barishal (BZL)</option>
+                  </optgroup>
+                  <optgroup label="International">
+                    <option value="DXB">Dubai (DXB)</option>
+                    <option value="SIN">Singapore (SIN)</option>
+                    <option value="BKK">Bangkok (BKK)</option>
+                    <option value="KUL">Kuala Lumpur (KUL)</option>
+                    <option value="DEL">Delhi (DEL)</option>
+                    <option value="CCU">Kolkata (CCU)</option>
+                    <option value="DOH">Doha (DOH)</option>
+                    <option value="JED">Jeddah (JED)</option>
+                    <option value="LHR">London (LHR)</option>
+                    <option value="JFK">New York (JFK)</option>
+                  </optgroup>
+                </select>
               </div>
               <div class="col-md-2">
-                <label class="form-label">Date</label>
-                <input type="date" class="form-control">
+                <label class="form-label">Departure</label>
+                <input type="date" class="form-control" id="homeFlightDate">
               </div>
-              <div class="col-12">
-                <button class="btn btn-primary btn-lg w-100">Search Flights</button>
+              <div class="col-md-1">
+                <label class="form-label">Travelers</label>
+                <select class="form-select" id="homeFlightTravelers">
+                  <option value="1" selected>1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <button class="btn btn-primary btn-lg w-100" onclick="redirectToFlights()">Search Flights</button>
               </div>
             </div>
+            <script>
+              // Initialize flight date
+              document.addEventListener('DOMContentLoaded', function () {
+                const flightDateInput = document.getElementById('homeFlightDate');
+                if (flightDateInput) {
+                  const today = new Date().toISOString().split('T')[0];
+                  flightDateInput.setAttribute('min', today);
+
+                  const tomorrow = new Date();
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  flightDateInput.value = tomorrow.toISOString().split('T')[0];
+                }
+              });
+
+              function swapFlightAirports() {
+                const origin = document.getElementById('homeFlightOrigin');
+                const dest = document.getElementById('homeFlightDest');
+                const temp = origin.value;
+                origin.value = dest.value;
+                dest.value = temp;
+              }
+
+              function redirectToFlights() {
+                const origin = document.getElementById('homeFlightOrigin').value;
+                const dest = document.getElementById('homeFlightDest').value;
+                const date = document.getElementById('homeFlightDate').value;
+                const travelers = document.getElementById('homeFlightTravelers').value;
+
+                if (origin === dest) {
+                  alert('Origin and destination cannot be the same');
+                  return;
+                }
+
+                window.location.href = `flights.html?origin=${origin}&destination=${dest}&date=${date}&travelers=${travelers}`;
+              }
+            </script>
           </div>
           <div class="tab-pane fade" id="cars" role="tabpanel" aria-labelledby="cars-tab">
             <div class="row g-3">
