@@ -45,6 +45,7 @@ desktop.ini
 *.env
 .env.local
 .env.*.local
+application.properties
 application-local.properties
 application-secrets.properties
 
