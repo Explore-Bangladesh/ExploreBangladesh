@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotels - Explore Bangladesh</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+        .hotels-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 80px 0 40px;
+            color: white;
+            margin-bottom: -50px;
+        }
+
+        .search-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hotel-card {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .hotel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .hotel-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .star-rating {
+            color: #ffc107;
+        }
+
+        .price-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .filter-sidebar {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .amenity-badge {
+            background: #e7f3ff;
+            color: #667eea;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin: 3px;
+            display: inline-block;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            display: none;
+        }
+
+        .no-results.active {
+            display: block;
+        }
+
+        .guest-rating-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .btn-filter {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn-filter:hover {
+            background: #5568d3;
+            color: white;
+        }
+
+        /* Map styles */
+        #mapContainer {
+            height: 500px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        /* Hotels.com style map preview card */
+        .map-preview-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: sticky;
+            top: 20px;
+        }
+
+        .map-preview-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .map-preview-image {
+            width: 100%;
+            height: 160px;
+            overflow: hidden;
+        }
+
+        .map-preview-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .map-preview-link {
+            text-align: center;
+            padding: 12px;
+            color: #1668e3;
+            font-weight: 600;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+
+        .map-preview-link:hover {
+            color: #0d4cb5;
+            text-decoration: underline;
+        }
+
+        /* Footer at bottom */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .footer {
+            margin-top: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="py-3 border-bottom bg-white">
+        <div class="container-fluid d-flex gap-3 align-items-center justify-content-between navbar-container">
+            <div>
+                <a href="index.html" class="d-flex align-items-center link-body-emphasis text-decoration-none">
+                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 7h22M4 15h22M4 23h22" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </a>
+            </div>
+            <nav class="main-navigation d-none d-lg-block">
+                <ul class="nav justify-content-center">
+                    <li><a href="hotels.html" class="nav-link px-2 text-primary fw-bold">Hotels</a></li>
+                    <li><a href="#" class="nav-link px-2 text-dark">Flights</a></li>
+                    <li><a href="#" class="nav-link px-2 text-dark">Cars</a></li>
+                    <li><a href="#" class="nav-link px-2 text-dark">Packages</a></li>
+                    <li><a href="#" class="nav-link px-2 text-dark">Travel Guide</a></li>
+                </ul>
+            </nav>
+            <div class="text-end">
+                <a href="login.html" class="btn btn-outline-primary me-2">Login</a>
+                <a href="signup.html" class="btn btn-primary">Sign-up</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hotels-hero">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-3">Find Your Perfect Stay in Bangladesh</h1>
+            <p class="lead">Discover amazing hotels across Dhaka, Cox's Bazar, Chittagong, Sylhet & more</p>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="search-card">
+                <form id="hotelSearchForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Destination</label>
+                            <input type="text" class="form-control" id="destination"
+                                placeholder="e.g., Dhaka, Cox's Bazar, Sylhet" required list="bangladeshCities">
+                            <datalist id="bangladeshCities">
+                                <option value="Dhaka">
+                                <option value="Cox's Bazar">
+                                <option value="Chittagong">
+                                <option value="Sylhet">
+                                <option value="Rangamati">
+                                <option value="Khulna">
+                                <option value="Rajshahi">
+                                <option value="Bandarban">
+                                <option value="Tangail">
+                                <option value="Mymensingh">
+                                <option value="Barishal">
+                                <option value="Rangpur">
+                            </datalist>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Check-in</label>
+                            <input type="date" class="form-control" id="checkInDate" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Check-out</label>
+                            <input type="date" class="form-control" id="checkOutDate" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Guests</label>
+                            <select class="form-select" id="adults">
+                                <option value="1">1 Guest</option>
+                                <option value="2" selected>2 Guests</option>
+                                <option value="3">3 Guests</option>
+                                <option value="4">4+ Guests</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search me-2"></i>Search
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="py-4">
+        <div class="container-fluid px-4">
+            <div class="row">
+                <!-- Map Preview Sidebar -->
+                <div class="col-lg-2 col-md-3 mb-4">
+                    <div id="mapPreviewCard" class="map-preview-card" style="display: none;" onclick="showMap()">
+                        <!-- Static map preview image -->
+                        <div class="map-preview-image">
+                            <img id="mapPreviewImg"
+                                src="https://api.geoapify.com/v1/staticmap?style=osm-bright&width=300&height=200&center=lonlat:90.4125,23.8103&zoom=11&apiKey=2a42881f098048d7ae41b52f7c540f33"
+                                alt="Map Preview">
+                        </div>
+                        <div class="map-preview-link">
+                            <i class="bi bi-geo-alt-fill me-1"></i>View in a map
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hotel Results -->
+                <div class="col-lg-10 col-md-9">
+                    <!-- Results Header -->
+                    <div id="resultsHeader" class="mb-3" style="display: none;">
+                        <h5 class="mb-0">
+                            <span id="resultsCount">0</span> hotels found in
+                            <span id="searchedDest">Bangladesh</span>
+                        </h5>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div id="loadingSpinner" class="loading-spinner">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Searching for the best hotels...</p>
+                    </div>
+
+                    <!-- No Results -->
+                    <div id="noResults" class="no-results">
+                        <i class="bi bi-search" style="font-size: 4rem; color: #ccc;"></i>
+                        <h4 class="mt-3">No hotels found</h4>
+                        <p class="text-muted">Try adjusting your search criteria</p>
+                    </div>
+
+                    <!-- Hotels Grid -->
+                    <div id="hotelsGrid" class="row">
+                        <!-- Hotels will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Modal -->
+    <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mapModalLabel">
+                        <i class="bi bi-map me-2"></i>Hotels in <span id="mapDestination">Bangladesh</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="mapContainer"></div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto">
+                        <i class="bi bi-info-circle me-1"></i>Click on markers to see hotel names
+                    </small>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer bg-dark text-light pt-5 pb-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-muted small mb-0">&copy; 2026 Explore Bangladesh. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="text-muted small mb-0">Made with <span class="text-danger">♥</span> in Bangladesh</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+    <script src="./js/hotels.js"></script>
+</body>
+
+</html>
