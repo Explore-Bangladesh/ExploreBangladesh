@@ -28,3 +28,4 @@ amadeus.base-url=https://test.api.amadeus.com
 # Country settings
 hotels.country.code=BD
 hotels.country.name=Bangladesh
+

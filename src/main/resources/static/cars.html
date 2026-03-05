@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Car Rentals - Explore Bangladesh</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    main {
+      flex: 1;
+    }
+
+    /* UI states (initial/loading/no-results) */
+    .state-block {
+      display: none;
+    }
+
+    .state-block.active {
+      display: block;
+    }
+
+    .state-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .state-message svg {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 20px;
+      stroke: #6c757d;
+    }
+
+    /* Results header hidden by default */
+    .results-header {
+      display: none;
+    }
+
+    /* Car image sizing */
+    .car-card img {
+      height: 220px;
+      object-fit: cover;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <header class="py-3 border-bottom bg-white">
+    <div class="container-fluid d-flex gap-3 align-items-center justify-content-between">
+      <div>
+        <a href="index.html" class="d-flex align-items-center text-decoration-none link-body-emphasis">
+          <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 7h22M4 15h22M4 23h22" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" />
+          </svg>
+        </a>
+      </div>
+
+      <nav class="d-none d-lg-block">
+        <ul class="nav justify-content-center" id="mainNav">
+          <li><a href="hotels.html" class="nav-link px-2 text-dark">Hotels</a></li>
+          <li><a href="flights.html" class="nav-link px-2 text-dark">Flights</a></li>
+          <li><a href="cars.html" class="nav-link px-2 text-dark">Cars</a></li>
+          <li><a href="#" class="nav-link px-2 text-dark">Packages</a></li>
+          <li><a href="guides.html" class="nav-link px-2 text-dark">Travel Guide</a></li>
+        </ul>
+      </nav>
+
+      <div class="text-end">
+        <a href="login.html" class="btn btn-outline-primary me-2">Login</a>
+        <a href="signup.html" class="btn btn-primary">Sign-up</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Hero Section -->
+    <section class="bg-primary text-white text-center py-5">
+      <div class="container">
+        <h1 class="display-5 fw-bold">Rent a Car Anywhere in Bangladesh</h1>
+        <p class="lead">Affordable, reliable and comfortable rides for your journey</p>
+      </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="py-5">
+      <div class="container">
+        <div class="card shadow-sm p-4">
+
+          <!-- Form (so submit works like flights page) -->
+          <form id="carSearchForm">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Pick-up Location</label>
+                <input type="text" id="pickupLocation" class="form-control" placeholder="Enter city" />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Pick-up Date</label>
+                <input type="date" id="pickupDate" class="form-control" />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Drop-off Date</label>
+                <input type="date" id="dropoffDate" class="form-control" />
+              </div>
+
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" id="searchCarBtn" class="btn btn-primary w-100">
+                  Search Cars
+                </button>
+              </div>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="container mt-4 mb-5">
+
+      <!-- Results header -->
+      <div id="resultsHeader" class="results-header mb-3">
+        <h4 class="mb-1">
+          <span id="resultsCount">0</span> cars found in <span id="searchLocation">-</span>
+        </h4>
+        <div class="text-muted">
+          Pick-up: <span id="searchPickupDate">-</span>
+          <span class="mx-2">•</span>
+          Drop-off: <span id="searchDropoffDate">-</span>
+        </div>
+      </div>
+
+      <!-- Initial state (visible on first load) -->
+      <div id="initialState" class="state-block active">
+        <div class="state-message">
+          <h3 class="fw-bold">Search for cars</h3>
+          <p>Enter a location and dates to see available cars.</p>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="loadingSpinner" class="state-block">
+        <div class="state-message">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+            <line x1="12" y1="8" x2="12" y2="12" stroke-width="2"></line>
+            <circle cx="12" cy="16" r="1"></circle>
+          </svg>
+          <h3>Loading...</h3>
+          <p>Please wait while we fetch cars.</p>
+        </div>
+      </div>
+
+      <!-- No results / error state -->
+      <div id="noResults" class="state-block">
+        <div class="state-message">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+            <line x1="12" y1="8" x2="12" y2="12" stroke-width="2"></line>
+            <circle cx="12" y1="16" r="1"></circle>
+          </svg>
+          <h3 class="fw-bold">No cars found</h3>
+          <p>Try changing location or dates.</p>
+        </div>
+      </div>
+
+      <!-- Cars list -->
+      <div id="carsList" class="row g-4"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light text-center py-4 mt-5">
+    <p class="mb-0">&copy; 2026 Explore Bangladesh. All rights reserved.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="./js/cars.js"></script>
+
+  <script>
+    // Highlight active nav
+    const navLinks = document.querySelectorAll('#mainNav a');
+    navLinks.forEach(link => {
+      if (link.href === window.location.href) {
+        link.classList.add('text-primary', 'fw-bold', 'text-blue');
+      }
+    });
+  </script>
+</body>
+
+</html>
