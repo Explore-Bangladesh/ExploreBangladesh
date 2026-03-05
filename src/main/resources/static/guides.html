@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Travel Guides</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+<!-- Header (Same as your main page navbar) -->
+<header class="py-3 border-bottom bg-white">
+        <div class="container-fluid d-flex gap-3 align-items-center justify-content-between navbar-container">
+            <div>
+                <a href="index.html" class="d-flex align-items-center link-body-emphasis text-decoration-none">
+                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 7h22M4 15h22M4 23h22" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </a>
+            </div>
+            <nav class="main-navigation d-none d-lg-block">
+                <ul class="nav justify-content-center">
+                    <li><a href="hotels.html" class="nav-link px-2 text-primary fw-bold">Hotels</a></li>
+                    <li><a href="flights.html" class="nav-link px-2 text-dark">Flights</a></li>
+                    <li><a href="#" class="nav-link px-2 text-dark">Cars</a></li>
+                    <li><a href="#" class="nav-link px-2 text-dark">Packages</a></li>
+                    <li><a href="#" class="nav-link px-2 text-dark">Travel Guide</a></li>
+                </ul>
+            </nav>
+            <div class="text-end">
+                <a href="login.html" class="btn btn-outline-primary me-2">Login</a>
+                <a href="signup.html" class="btn btn-primary">Sign-up</a>
+            </div>
+        </div>
+    </header>
+
+<!-- Hero Section -->
+<section class="bg-primary text-white text-center py-5">
+  <div class="container">
+    <h1 class="display-5 fw-bold">Find Trusted Local Travel Guides</h1>
+    <p class="lead">Connect with experienced guides across Bangladesh</p>
+  </div>
+</section>
+
+<!-- Search Section -->
+<section class="py-5">
+  <div class="container">
+    <div class="card shadow-sm p-4">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">City</label>
+          <input type="text" class="form-control" placeholder="Enter city">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Language</label>
+          <select class="form-select">
+            <option selected>Choose language</option>
+            <option>English</option>
+            <option>Bangla</option>
+            <option>Hindi</option>
+          </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button class="btn btn-primary w-100">Search Guides</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Guides Section -->
+<section class="pb-5">
+  <div class="container">
+    <h2 class="text-center mb-4">Available Guides</h2>
+
+    <div class="row g-4">
+
+      <!-- Guide Card -->
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100 text-center p-3">
+          <img src="https://source.unsplash.com/120x120/?man,portrait"
+               class="rounded-circle mx-auto mb-3" alt="Guide">
+          <h5 class="fw-bold">Rahim Ahmed</h5>
+          <p class="text-muted">Dhaka</p>
+          <p class="text-warning">★★★★★ (4.9)</p>
+          <p class="small text-muted">
+            5 Years Experience <br>
+            Languages: English, Bangla
+          </p>
+          <button class="btn btn-primary mt-2">Hire Guide</button>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100 text-center p-3">
+          <img src="https://source.unsplash.com/120x120/?woman,portrait"
+               class="rounded-circle mx-auto mb-3" alt="Guide">
+          <h5 class="fw-bold">Sadia Karim</h5>
+          <p class="text-muted">Cox's Bazar</p>
+          <p class="text-warning">★★★★☆ (4.6)</p>
+          <p class="small text-muted">
+            3 Years Experience <br>
+            Languages: English
+          </p>
+          <button class="btn btn-primary mt-2">Hire Guide</button>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100 text-center p-3">
+          <img src="https://source.unsplash.com/120x120/?traveler,portrait"
+               class="rounded-circle mx-auto mb-3" alt="Guide">
+          <h5 class="fw-bold">Tanvir Hasan</h5>
+          <p class="text-muted">Sylhet</p>
+          <p class="text-warning">★★★★★ (5.0)</p>
+          <p class="small text-muted">
+            7 Years Experience <br>
+            Languages: English, Hindi
+          </p>
+          <button class="btn btn-primary mt-2">Hire Guide</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Footer (Same Style as Main Site) -->
+<footer class="bg-dark text-light text-center py-4">
+  <p class="mb-0">&copy; 2026 Explore Bangladesh. All rights reserved.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
