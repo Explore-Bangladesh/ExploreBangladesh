@@ -3,12 +3,17 @@ package com.TeamDeadlock.ExploreBangladesh.service;
 import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchRequest;
 import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchResponse;
 import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchResponse.*;
+import com.TeamDeadlock.ExploreBangladesh.entity.Airline;
+import com.TeamDeadlock.ExploreBangladesh.entity.Airport;
+import com.TeamDeadlock.ExploreBangladesh.repository.AirlineRepository;
+import com.TeamDeadlock.ExploreBangladesh.repository.AirportRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FlightsApiService {
@@ -23,54 +28,28 @@ public class FlightsApiService {
     private String baseUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
-    
+    private final AirportRepository airportRepository;
+    private final AirlineRepository airlineRepository;
+
     private String accessToken;
     private long tokenExpiry = 0;
 
-    // Bangladesh airports with IATA codes
-    private static final Map<String, String> AIRPORT_NAMES = new HashMap<>();
-    
-    static {
-        // Domestic airports
-        AIRPORT_NAMES.put("DAC", "Dhaka (Hazrat Shahjalal)");
-        AIRPORT_NAMES.put("CGP", "Chittagong (Shah Amanat)");
-        AIRPORT_NAMES.put("CXB", "Cox's Bazar");
-        AIRPORT_NAMES.put("ZYL", "Sylhet (Osmani)");
-        AIRPORT_NAMES.put("RJH", "Rajshahi (Shah Makhdum)");
-        AIRPORT_NAMES.put("JSR", "Jessore");
-        AIRPORT_NAMES.put("SPD", "Saidpur");
-        AIRPORT_NAMES.put("BZL", "Barishal");
-        
-        // International destinations (commonly searched from Bangladesh)
-        AIRPORT_NAMES.put("DXB", "Dubai");
-        AIRPORT_NAMES.put("SIN", "Singapore");
-        AIRPORT_NAMES.put("BKK", "Bangkok");
-        AIRPORT_NAMES.put("KUL", "Kuala Lumpur");
-        AIRPORT_NAMES.put("DEL", "Delhi");
-        AIRPORT_NAMES.put("CCU", "Kolkata");
-        AIRPORT_NAMES.put("DOH", "Doha");
-        AIRPORT_NAMES.put("JED", "Jeddah");
-        AIRPORT_NAMES.put("LHR", "London Heathrow");
-        AIRPORT_NAMES.put("JFK", "New York JFK");
+    public FlightsApiService(AirportRepository airportRepository,
+                             AirlineRepository airlineRepository) {
+        this.airportRepository = airportRepository;
+        this.airlineRepository = airlineRepository;
     }
 
-    // Airline names
-    private static final Map<String, String> AIRLINE_NAMES = new HashMap<>();
-    
-    static {
-        AIRLINE_NAMES.put("BG", "Biman Bangladesh Airlines");
-        AIRLINE_NAMES.put("BS", "US-Bangla Airlines");
-        AIRLINE_NAMES.put("VQ", "Novoair");
-        AIRLINE_NAMES.put("EK", "Emirates");
-        AIRLINE_NAMES.put("QR", "Qatar Airways");
-        AIRLINE_NAMES.put("SQ", "Singapore Airlines");
-        AIRLINE_NAMES.put("TG", "Thai Airways");
-        AIRLINE_NAMES.put("MH", "Malaysia Airlines");
-        AIRLINE_NAMES.put("AI", "Air India");
-        AIRLINE_NAMES.put("6E", "IndiGo");
-        AIRLINE_NAMES.put("SV", "Saudia");
-        AIRLINE_NAMES.put("BA", "British Airways");
-        AIRLINE_NAMES.put("TK", "Turkish Airlines");
+    /** Build an in-memory lookup map from the airports table. */
+    private Map<String, String> getAirportNames() {
+        return airportRepository.findAll().stream()
+                .collect(Collectors.toMap(Airport::getIataCode, Airport::getName));
+    }
+
+    /** Build an in-memory lookup map from the airlines table. */
+    private Map<String, String> getAirlineNames() {
+        return airlineRepository.findAll().stream()
+                .collect(Collectors.toMap(Airline::getCode, Airline::getName));
     }
 
     /**
@@ -173,9 +152,13 @@ public class FlightsApiService {
         FlightSearchResponse result = new FlightSearchResponse();
         List<FlightOffer> flights = new ArrayList<>();
 
+        // Load reference data from database for this request
+        Map<String, String> airportNames = getAirportNames();
+        Map<String, String> airlineNames = getAirlineNames();
+
         List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
         Map<String, Object> dictionaries = (Map<String, Object>) response.get("dictionaries");
-        Map<String, String> carriers = dictionaries != null ? 
+        Map<String, String> carriers = dictionaries != null ?
             (Map<String, String>) dictionaries.get("carriers") : new HashMap<>();
 
         if (data != null) {
@@ -217,18 +200,19 @@ public class FlightsApiService {
                         String arrCode = (String) arrival.get("iataCode");
                         
                         segment.setDepartureAirport(depCode);
-                        segment.setDepartureCity(AIRPORT_NAMES.getOrDefault(depCode, depCode));
+                        segment.setDepartureCity(airportNames.getOrDefault(depCode, depCode));
                         segment.setDepartureTime(formatDateTime((String) departure.get("at")));
-                        
+
                         segment.setArrivalAirport(arrCode);
-                        segment.setArrivalCity(AIRPORT_NAMES.getOrDefault(arrCode, arrCode));
+                        segment.setArrivalCity(airportNames.getOrDefault(arrCode, arrCode));
                         segment.setArrivalTime(formatDateTime((String) arrival.get("at")));
-                        
+
                         String carrierCode = (String) seg.get("carrierCode");
                         segment.setCarrierCode(carrierCode);
-                        segment.setCarrierName(carriers.getOrDefault(carrierCode, 
-                            AIRLINE_NAMES.getOrDefault(carrierCode, carrierCode)));
-                        
+                        // Amadeus live dictionary takes priority, then our airline table
+                        segment.setCarrierName(carriers.getOrDefault(carrierCode,
+                            airlineNames.getOrDefault(carrierCode, carrierCode)));
+
                         if (mainCarrier.isEmpty()) {
                             mainCarrier = carrierCode;
                         }
@@ -251,8 +235,8 @@ public class FlightsApiService {
                 flightOffer.setItineraries(itineraries);
                 flightOffer.setNumberOfStops(totalStops);
                 flightOffer.setAirline(mainCarrier);
-                flightOffer.setAirlineName(carriers.getOrDefault(mainCarrier, 
-                    AIRLINE_NAMES.getOrDefault(mainCarrier, mainCarrier)));
+                flightOffer.setAirlineName(carriers.getOrDefault(mainCarrier,
+                    airlineNames.getOrDefault(mainCarrier, mainCarrier)));
                 
                 flights.add(flightOffer);
             }
@@ -303,10 +287,8 @@ public class FlightsApiService {
         return isoDateTime;
     }
 
-    /**
-     * Get list of supported airports
-     */
+    /** Get list of supported airports from the database */
     public Map<String, String> getSupportedAirports() {
-        return new HashMap<>(AIRPORT_NAMES);
+        return getAirportNames();
     }
 }
