@@ -340,3 +340,40 @@ body.offcanvas-open .footer {
     color: #48bb78;
     font-size: 0.9rem;
 }
+
+/* ── Nearby Places Section (index.html) ─────────────────────── */
+#nearbyPlacesSection {
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+#nearbyPlacesSection h2 {
+    font-size: 2rem;
+}
+
+#homeLocationInput {
+    border-radius: 8px;
+    border: 1.5px solid #dee2e6;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: border-color .2s;
+}
+
+#homeLocationInput:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    outline: none;
+}
+
+#homePlacesGrid .card {
+    cursor: default;
+}
+
+/* Responsive: stack detect+search buttons on small screens */
+@media (max-width: 576px) {
+    #nearbyPlacesSection .d-flex {
+        flex-direction: column;
+    }
+    #nearbyPlacesSection .d-flex > * {
+        width: 100% !important;
+    }
+}
