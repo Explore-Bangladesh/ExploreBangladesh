@@ -29,6 +29,7 @@
           <li><a href="cars.html" class="nav-link px-2 text-dark">Cars</a></li>
           <li><a href="#" class="nav-link px-2 text-dark">Packages</a></li>
           <li><a href="guides.html" class="nav-link px-2 text-dark">Travel Guide</a></li>
+          <li><a href="places.html" class="nav-link px-2 text-dark">Nearby Places</a></li>
         </ul>
       </nav>
       <div class="text-end">
@@ -49,8 +50,9 @@
       <ul class="list-unstyled">
         <li><a class="dropdown-item py-2" href="hotels.html" aria-current="page">Hotels</a></li>
         <li><a class="dropdown-item py-2" href="flights.html">Flights</a></li>
-        <li><a class="dropdown-item py-2" href="#">Cars</a></li>
-        <li><a class="dropdown-item py-2" href="#">Travel Guide</a></li>
+        <li><a class="dropdown-item py-2" href="cars.html">Cars</a></li>
+        <li><a class="dropdown-item py-2" href="guides.html">Travel Guide</a></li>
+        <li><a class="dropdown-item py-2" href="places.html">Nearby Places</a></li>
         <li>
           <hr class="dropdown-divider" />
         </li>
@@ -428,6 +430,232 @@
       </div>
     </div>
   </section>
+
+  <!-- ── Location-Based Place Recommendation Section ── -->
+  <section class="py-5 bg-light" id="nearbyPlacesSection">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold">📍 Places Near You</h2>
+        <p class="text-muted">Detect your location or type a district to discover amazing spots to visit</p>
+      </div>
+      <!-- Detection widget -->
+      <div class="row justify-content-center mb-4">
+        <div class="col-md-8">
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="flex-grow-1">
+              <input type="text" id="homeLocationInput" class="form-control form-control-lg"
+                placeholder="Type a district, e.g. Tangail, Sylhet, Cox's Bazar…"
+                list="homePlaceSuggestions" autocomplete="off" />
+              <datalist id="homePlaceSuggestions"></datalist>
+            </div>
+            <button id="homeBtnDetect" class="btn btn-outline-primary btn-lg px-3"
+              onclick="homeDetectLocation()" title="Detect my location">🛰️</button>
+            <button class="btn btn-primary btn-lg px-4"
+              onclick="homeSearchPlaces()">Find Places</button>
+          </div>
+          <small id="homeDetectedNote" class="text-muted mt-1 d-none">
+            📍 Detected: <strong id="homeDetectedName" class="text-success"></strong>
+            <span class="ms-2">Wrong district?
+              <button type="button" class="btn btn-link btn-sm p-0 align-baseline"
+                      style="font-size:inherit;" onclick="homeToggleDistrictPicker()">Choose manually</button>
+            </span>
+          </small>
+          <div id="homeDistrictPickerRow" class="mt-2 d-none">
+            <select id="homeDistrictSelect" class="form-select form-select-sm"
+                    style="max-width:260px;" onchange="homeSelectDistrict(this.value)">
+              <option value="">— Select your district —</option>
+            </select>
+          </div>
+          <div id="homeAlertBox" class="alert mt-2 d-none" role="alert"></div>
+        </div>
+      </div>
+      <!-- Preview cards (top 3) -->
+      <div id="homePlacesGrid" class="row g-4"></div>
+      <!-- Link to full page -->
+      <div id="homeViewAllWrap" class="text-center mt-4 d-none">
+        <a id="homeViewAllLink" href="places.html" class="btn btn-outline-primary btn-lg">
+          View All Places →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const HOME_API = '/api/places';
+
+      // Load location suggestions
+      fetch(`${HOME_API}/locations`)
+        .then(r => r.ok ? r.json() : [])
+        .then(locs => {
+          const dl = document.getElementById('homePlaceSuggestions');
+          const sel = document.getElementById('homeDistrictSelect');
+          locs.forEach(l => {
+            const o = document.createElement('option'); o.value = l; dl.appendChild(o);
+            const so = document.createElement('option'); so.value = l; so.textContent = l; sel.appendChild(so);
+          });
+        }).catch(() => {});
+
+      window.homeDetectLocation = function () {
+        if (!navigator.geolocation) {
+          showHomeAlert('warning', 'Geolocation not supported. Please type your location.');
+          return;
+        }
+        const btn = document.getElementById('homeBtnDetect');
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const { latitude, longitude, accuracy } = pos.coords;
+
+            // Accuracy worse than 5 km = Wi-Fi / IP fallback, not real GPS → will return wrong district
+            if (accuracy > 5000) {
+              showHomeAlert('warning',
+                `⚠️ Location accuracy is too low (±${Math.round(accuracy / 1000)} km). Your device is using Wi-Fi or IP positioning. Please select your district manually.`);
+              document.getElementById('homeDistrictPickerRow').classList.remove('d-none');
+              btn.disabled = false; btn.textContent = '🛠️';
+              return;
+            }
+
+            try {
+              // zoom=8 → upazila precision; county = upazila, state_district = parent district (always set)
+              const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=8&accept-language=en`;
+              const geo = await fetch(url);
+              const d   = await geo.json();
+              const a   = d.address || {};
+
+              const rawUpazila  = a.county || a.city_district || '';
+              const upazila     = rawUpazila.replace(/\s*(District|Zila|Upazila|Upazilla|Thana|Division|Sadar)\b/gi, '').trim();
+              const rawDistrict = a.state_district || a.city || a.town || a.state || 'Dhaka';
+              const district    = rawDistrict.replace(/\s*(District|Zila|Upazila|Upazilla|Thana|Division|Sadar)\b/gi, '').trim();
+              const label       = upazila ? `${upazila} Upazila → ${district}` : district;
+
+              document.getElementById('homeLocationInput').value = district;
+              document.getElementById('homeDetectedName').textContent = label;
+              document.getElementById('homeDetectedNote').classList.remove('d-none');
+              document.getElementById('homeDistrictPickerRow').classList.add('d-none');
+              document.getElementById('homeDistrictSelect').value = '';
+              homeFetchPlaces(district);
+            } catch (_) { showHomeAlert('danger', 'Could not resolve location. Please type it manually.'); }
+            finally { btn.disabled = false; btn.textContent = '🛰️'; }
+          },
+          (err) => {
+            const msg = err.code === err.PERMISSION_DENIED
+              ? 'Location permission denied. Please type your location.'
+              : 'Could not detect location.';
+            showHomeAlert('warning', msg);
+            btn.disabled = false; btn.textContent = '🛰️';
+          },
+          { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
+        );
+      };
+
+      window.homeToggleDistrictPicker = function () {
+        document.getElementById('homeDistrictPickerRow').classList.toggle('d-none');
+      };
+
+      window.homeSelectDistrict = function (val) {
+        if (!val) return;
+        document.getElementById('homeLocationInput').value = val;
+        document.getElementById('homeDetectedName').textContent = val;
+        document.getElementById('homeDistrictPickerRow').classList.add('d-none');
+        document.getElementById('homeDistrictSelect').value = '';
+        homeFetchPlaces(val);
+      };
+
+      window.homeSearchPlaces = function () {
+        const loc = document.getElementById('homeLocationInput').value.trim();
+        if (!loc) { showHomeAlert('warning', 'Please enter a location.'); return; }
+        document.getElementById('homeDetectedNote').classList.add('d-none');
+        document.getElementById('homeDistrictPickerRow').classList.add('d-none');
+        homeFetchPlaces(loc);
+      };
+
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('homeLocationInput').addEventListener('keydown', e => {
+          if (e.key === 'Enter') homeSearchPlaces();
+        });
+      });
+
+      async function homeFetchPlaces(location) {
+        hideHomeAlert();
+        document.getElementById('homePlacesGrid').innerHTML =
+          '<div class="col-12 text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        document.getElementById('homeViewAllWrap').classList.add('d-none');
+        try {
+          const res  = await fetch(`${HOME_API}/nearby?location=${encodeURIComponent(location)}`);
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          homeRenderCards(data.places || [], location);
+        } catch (_) {
+          document.getElementById('homePlacesGrid').innerHTML = '';
+          showHomeAlert('danger', 'Could not load recommendations. Please try again.');
+        }
+      }
+
+      function homeRenderCards(places, location) {
+        const grid = document.getElementById('homePlacesGrid');
+        grid.innerHTML = '';
+        const preview = places.slice(0, 3);
+        if (preview.length === 0) {
+          grid.innerHTML = '<div class="col-12 text-center text-muted py-3">No places found for this location.</div>';
+          return;
+        }
+        const catColors = {
+          'Nature':    '#d4edda', 'Heritage': '#fff3cd', 'Religious': '#cce5ff',
+          'Beach':     '#d1ecf1', 'Wildlife': '#f8d7da'
+        };
+        const catText   = {
+          'Nature':    '#155724', 'Heritage': '#856404', 'Religious': '#004085',
+          'Beach':     '#0c5460', 'Wildlife': '#721c24'
+        };
+        preview.forEach(p => {
+          const bg  = catColors[p.category] || '#e9ecef';
+          const col = catText[p.category]  || '#333';
+          const highlights = (p.highlights || []).slice(0, 3)
+            .map(h => `<span style="background:#f0f4ff;color:#3366cc;border-radius:20px;padding:2px 9px;font-size:.78rem;margin:2px;display:inline-block">${escHtml(h)}</span>`).join('');
+          const div = document.createElement('div');
+          div.className = 'col-md-4';
+          div.innerHTML = `
+            <div class="card border-0 shadow-sm h-100" style="border-radius:14px;overflow:hidden;transition:transform .3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+              <img src="${escHtml(p.imageUrl)}" style="width:100%;height:190px;object-fit:cover"
+                   alt="${escHtml(p.name)}" onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'">
+              <div class="p-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span style="background:${bg};color:${col};font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:3px 10px;border-radius:20px">${escHtml(p.category)}</span>
+                  <span style="color:#ffc107;font-size:.9rem">★ <span style="color:#555;font-size:.85rem">${p.rating.toFixed(1)}</span></span>
+                </div>
+                <h6 class="fw-bold mt-2 mb-1">${escHtml(p.name)}</h6>
+                <small style="color:#888">📍 ${escHtml(p.distanceNote)}</small>
+                <p class="text-muted small mt-2" style="line-height:1.5;font-size:.82rem">${escHtml(p.description)}</p>
+                <div>${highlights}</div>
+              </div>
+            </div>`;
+          grid.appendChild(div);
+        });
+        if (places.length > 3) {
+          const link = document.getElementById('homeViewAllLink');
+          link.href = `places.html?location=${encodeURIComponent(location)}`;
+          link.textContent = `View All ${places.length} Places in ${location} →`;
+          document.getElementById('homeViewAllWrap').classList.remove('d-none');
+        }
+      }
+
+      function escHtml(s) {
+        if (!s) return '';
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+      function showHomeAlert(type, msg) {
+        const b = document.getElementById('homeAlertBox');
+        b.className = `alert alert-${type} mt-2`;
+        b.textContent = msg;
+        b.classList.remove('d-none');
+      }
+      function hideHomeAlert() {
+        document.getElementById('homeAlertBox').classList.add('d-none');
+      }
+    })();
+  </script>
 
   <!-- Footer -->
   <footer class="footer bg-dark text-light pt-5 pb-3">
