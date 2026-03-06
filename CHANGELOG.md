@@ -126,7 +126,7 @@ API Keys needed:
 
 ```bash
 # 1. Copy template and add your API keys
-copy application.properties.template src\main\resources\application.properties
+copy application.properties src\main\resources\application.properties
 
 # 2. Start the application
 .\mvnw.cmd spring-boot:run
