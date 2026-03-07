@@ -21,17 +21,20 @@ public class DataInitializer implements ApplicationRunner {
     private final AirlineRepository airlineRepository;
     private final CarRepository carRepository;
     private final GuideRepository guideRepository;
+    private final PlaceRepository placeRepository;
 
     public DataInitializer(CityCoordinateRepository cityCoordinateRepository,
                            AirportRepository airportRepository,
                            AirlineRepository airlineRepository,
                            CarRepository carRepository,
-                           GuideRepository guideRepository) {
+                           GuideRepository guideRepository,
+                           PlaceRepository placeRepository) {
         this.cityCoordinateRepository = cityCoordinateRepository;
         this.airportRepository = airportRepository;
         this.airlineRepository = airlineRepository;
         this.carRepository = carRepository;
         this.guideRepository = guideRepository;
+        this.placeRepository = placeRepository;
     }
 
     @Override
@@ -41,6 +44,7 @@ public class DataInitializer implements ApplicationRunner {
         seedAirlines();
         seedCars();
         seedGuides();
+        seedPlaces();
     }
 
     // ─────────────────────────────────────────────
@@ -240,5 +244,183 @@ public class DataInitializer implements ApplicationRunner {
         return new GuideEntity(id, name, city, expYears, rating,
                 "https://images.unsplash.com/" + unsplashId + "?w=120",
                 Arrays.asList(languages));
+    }
+
+    // ─────────────────────────────────────────────
+    // Places (Tourist attractions & recommendations)
+    // ─────────────────────────────────────────────
+    private void seedPlaces() {
+        if (placeRepository.count() > 0) return;
+
+        List<PlaceEntity> places = Arrays.asList(
+                // Note: This is a comprehensive seed from the service layer
+                // The full data migration is being performed from PlacesRecommendationService
+                
+                // Dhaka
+                place("dhk-1", "Lalbagh Fort", "Heritage", 
+                    "A 17th-century Mughal fort on the Buriganga River featuring the tomb of Pari Bibi and the Diwan-i-Aam — a must-visit landmark of Old Dhaka.",
+                    "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600", 
+                    4.8, "Old Dhaka", "dhaka", "History", "Photography", "Architecture"),
+                place("dhk-2", "Ahsan Manzil (Pink Palace)", "Heritage",
+                    "The iconic Pink Palace on the Buriganga riverfront, home to the Nawabs of Dhaka and now a national museum packed with history.",
+                    "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=600",
+                    4.8, "Old Dhaka", "dhaka", "Museum", "History", "Architecture"),
+                place("dhk-3", "Star Mosque (Tara Masjid)", "Religious",
+                    "An exquisitely decorated mosque adorned with Chinese porcelain tiles forming star patterns — a unique gem of Old Dhaka.",
+                    "https://images.unsplash.com/photo-1585211969224-3e992986159d?w=600",
+                    4.7, "Old Dhaka", "dhaka", "Architecture", "Religious", "Photography"),
+                place("dhk-4", "National Parliament House", "Heritage",
+                    "Louis Kahn's masterpiece of 20th-century architecture — arguably the most important building in Bangladesh.",
+                    "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600",
+                    4.9, "Sher-e-Bangla Nagar", "dhaka", "Architecture", "National Landmark", "Photography"),
+                place("dhk-5", "National Museum of Bangladesh", "Heritage",
+                    "The largest museum in Bangladesh with over 83,000 artifacts spanning art, history, natural history and ethnography.",
+                    "https://images.unsplash.com/photo-1525926193424-3f2af69c96cd?w=600",
+                    4.6, "Shahbagh", "dhaka", "Museum", "Education", "Art"),
+                place("dhk-6", "Shaheed Minar", "Heritage",
+                    "Bangladesh's national language movement monument — a symbol of cultural pride and the struggle for the Bangla language.",
+                    "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600",
+                    4.9, "Dhaka University area", "dhaka", "History", "National Symbol", "Monument"),
+                place("dhk-7", "Liberation War Museum", "Heritage",
+                    "A powerful museum documenting the 1971 Liberation War through artifacts, photographs and testimonies.",
+                    "https://images.unsplash.com/photo-1525926193424-3f2af69c96cd?w=600",
+                    4.8, "Segunbagicha", "dhaka", "Museum", "History", "Education"),
+                
+                // Cox's Bazar
+                place("cxb-1", "Cox's Bazar Sea Beach", "Beach",
+                    "The world's longest natural sea beach stretching 120 km with golden sands and crashing Bay of Bengal waves.",
+                    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600",
+                    4.9, "Cox's Bazar town", "cox's bazar", "Swimming", "Sunset", "Surfing"),
+                place("cxb-2", "Saint Martin's Island", "Beach",
+                    "Bangladesh's only coral island — famous for its crystal-clear blue water, coral reefs, coconut palms and seafood.",
+                    "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=600",
+                    4.9, "120 km south of Cox's Bazar", "cox's bazar", "Snorkeling", "Coral Reef", "Island"),
+                place("cxb-3", "Inani Beach", "Beach",
+                    "A serene coral-strewn beach 27 km south of Cox's Bazar with crystal-clear water and colorful pebbles.",
+                    "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=600",
+                    4.8, "27 km from Cox's Bazar", "cox's bazar", "Snorkeling", "Photography", "Coral"),
+                place("cxb-4", "Himchari National Park", "Wildlife",
+                    "A forested hill area with a stunning waterfall right beside the sea, home to diverse wildlife.",
+                    "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600",
+                    4.7, "12 km from Cox's Bazar", "cox's bazar", "Waterfall", "Trekking", "Wildlife"),
+                
+                // Sylhet
+                place("syl-1", "Ratargul Swamp Forest", "Wildlife",
+                    "Bangladesh's only freshwater swamp forest — called the Amazon of Bangladesh. Take a boat through the eerie green canopy.",
+                    "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600",
+                    4.9, "26 km from Sylhet city", "sylhet", "Boat Tour", "Photography", "Wildlife"),
+                place("syl-2", "Jaflong", "Nature",
+                    "A scenic area at the foothills of the Meghalaya hills with the Piyain River, stone collection, and views into India.",
+                    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600",
+                    4.8, "60 km from Sylhet city", "sylhet", "River", "Photography", "Scenic"),
+                place("syl-3", "Lalakhal", "Nature",
+                    "Famous for its strikingly blue-green river water — boat rides here are an unmissable Sylhet experience.",
+                    "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=600",
+                    4.8, "35 km from Sylhet city", "sylhet", "Boat Ride", "Photography", "Nature"),
+                
+                // Chittagong
+                place("ctg-1", "Patenga Beach", "Beach",
+                    "A popular sea beach at the mouth of the Karnaphuli River with views of ships and the busy Chittagong port.",
+                    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600",
+                    4.5, "22 km from Chittagong city", "chittagong", "Sunset", "Beach", "Photography"),
+                place("ctg-2", "Foy's Lake", "Nature",
+                    "A man-made lake in forested hills with an amusement park and cable car — perfect for families.",
+                    "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=600",
+                    4.4, "8 km from Chittagong city", "chittagong", "Boat Ride", "Amusement Park", "Cable Car"),
+                
+                // Bandarban
+                place("bdb-1", "Nilgiri Hill Resort", "Nature",
+                    "The highest tourist spot in Bangladesh at 3,000 ft — clouds float beneath your feet and sunrises are phenomenal.",
+                    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",
+                    4.9, "47 km from Bandarban town", "bandarban", "Sunrise", "Cloud Sea", "Trekking"),
+                place("bdb-2", "Golden Temple (Buddha Dhatu Jadi)", "Religious",
+                    "The largest Buddhist temple complex in Bangladesh on a hilltop, adorned in stunning golden splendor.",
+                    "https://images.unsplash.com/photo-1585211969224-3e992986159d?w=600",
+                    4.8, "4 km from Bandarban town", "bandarban", "Buddhist Temple", "Photography", "Cultural"),
+                place("bdb-3", "Nafakhum Waterfall", "Nature",
+                    "The largest waterfall in Bangladesh — a multi-day jungle trek to witness this magnificent cascade.",
+                    "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600",
+                    4.9, "79 km from Bandarban town", "bandarban", "Waterfall", "Trekking", "Adventure"),
+                
+                // Rangamati
+                place("rmt-1", "Kaptai Lake", "Nature",
+                    "The largest man-made lake in South Asia surrounded by lush hills — boat rides offer breathtaking scenery.",
+                    "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=600",
+                    4.9, "Rangamati town", "rangamati", "Boat Ride", "Fishing", "Photography"),
+                place("rmt-2", "Hanging Bridge of Rangamati", "Heritage",
+                    "A famous 335-meter suspension bridge over the Kaptai Lake — an iconic symbol of Rangamati.",
+                    "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600",
+                    4.7, "Rangamati town", "rangamati", "Photography", "Scenic", "Iconic"),
+                
+                // Khulna
+                place("khl-1", "Sundarbans Mangrove Forest", "Wildlife",
+                    "The world's largest mangrove forest and UNESCO World Heritage Site — home to the Royal Bengal Tiger.",
+                    "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600",
+                    5.0, "87 km from Khulna city", "khulna", "Tiger Safari", "Boat Tour", "Wildlife"),
+                place("khl-2", "Sixty Dome Mosque (Bagerhat)", "Heritage",
+                    "A 15th-century UNESCO World Heritage Site mosque with 60 stone pillars — the most impressive medieval mosque in Bangladesh.",
+                    "https://images.unsplash.com/photo-1585211969224-3e992986159d?w=600",
+                    4.9, "50 km from Khulna city", "khulna", "Architecture", "History", "UNESCO Site"),
+                
+                // Tangail
+                place("tng-1", "Atia Mosque", "Heritage",
+                    "A magnificent 16th-century Mughal mosque with intricate terracotta ornamentation — one of the finest pre-Mughal architectural gems in Bangladesh.",
+                    "https://images.unsplash.com/photo-1585211969224-3e992986159d?w=600",
+                    4.7, "12 km from Tangail town", "tangail", "Photography", "History", "Architecture"),
+                place("tng-2", "Madhupur National Park", "Wildlife",
+                    "A protected sal forest and national park home to diverse wildlife, tribal Garo communities, and beautiful nature trails.",
+                    "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600",
+                    4.5, "45 km from Tangail town", "tangail", "Trekking", "Wildlife", "Tribal Culture"),
+                
+                // Rajshahi
+                place("rjh-1", "Paharpur Vihara", "Heritage",
+                    "The ruins of an 8th-century Buddhist monastery — a UNESCO World Heritage Site and the second-largest single Buddhist monastery south of the Himalayas.",
+                    "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600",
+                    4.8, "67 km from Rajshahi", "rajshahi", "Archaeology", "History", "UNESCO Site"),
+                place("rjh-2", "Varendra Research Museum", "Heritage",
+                    "The oldest museum in Bangladesh (1910) with a rich collection of archaeological artifacts from the region.",
+                    "https://images.unsplash.com/photo-1525926193424-3f2af69c96cd?w=600",
+                    4.5, "Rajshahi city", "rajshahi", "Museum", "History", "Archaeology"),
+                
+                // Mymensingh
+                place("mym-1", "Shashi Lodge", "Heritage",
+                    "A beautiful 19th-century Greek-revival palace set within a garden, built by the Maharajas of Mymensingh.",
+                    "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=600",
+                    4.6, "Mymensingh town", "mymensingh", "Architecture", "History", "Gardens"),
+                place("mym-2", "Alexander Castle", "Heritage",
+                    "A magnificent castle built by Raja Shashi Kanta Acharya in 1905 — now housing the Teachers Training College.",
+                    "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600",
+                    4.5, "Mymensingh town", "mymensingh", "History", "Architecture", "Photography"),
+                place("mym-3", "BAU Botanical Garden", "Nature",
+                    "The largest botanical garden in Bangladesh inside Bangladesh Agricultural University.",
+                    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600",
+                    4.5, "Mymensingh town", "mymensingh", "Nature Walk", "Photography", "Education"),
+                place("mym-4", "Brahmaputra River Embankment", "Nature",
+                    "A lovely riverside walk along the old Brahmaputra — a popular evening stroll with great views and breeze.",
+                    "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=600",
+                    4.3, "Mymensingh town center", "mymensingh", "River Walk", "Relaxation", "Photography"),
+                place("mym-5", "Muktagachha Palace", "Heritage",
+                    "An ornate 19th-century zamindari palace in Muktagachha, famous for its terracotta artwork.",
+                    "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600",
+                    4.3, "19 km from Mymensingh town", "mymensingh", "History", "Architecture", "Photography"),
+                place("mym-6", "Mymensingh Museum", "Heritage",
+                    "A district museum housing artifacts reflecting the history and culture of the Mymensingh region.",
+                    "https://images.unsplash.com/photo-1525926193424-3f2af69c96cd?w=600",
+                    4.1, "Mymensingh town", "mymensingh", "Museum", "History", "Culture"),
+                place("mym-7", "Gauripur Palace", "Heritage",
+                    "A hauntingly beautiful ruined zamindari palace in Gauripur with grand rooms and overgrown courtyards.",
+                    "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=600",
+                    4.4, "20 km from Mymensingh town", "mymensingh", "Ruins", "Photography", "History")
+        );
+        
+        placeRepository.saveAll(places);
+        System.out.println("[DataInitializer] Seeded " + places.size() + " places.");
+    }
+
+    private PlaceEntity place(String id, String name, String category, String description,
+                             String imageUrl, double rating, String distanceNote, String location,
+                             String... highlights) {
+        return new PlaceEntity(id, name, category, description, imageUrl, rating, 
+                             distanceNote, location.toLowerCase(), Arrays.asList(highlights));
     }
 }
