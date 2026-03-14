@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const user = await response.json();
                 document.getElementById('avatarImg').src = user.image && user.image.startsWith('data:image') 
                     ? user.image 
-                    : (user.image || 'https://via.placeholder.com/40');
+                    : (user.image || 'Assets/default_user.jpg');
             } else if (response.status === 401 || response.status === 403) {
                 // Token invalid, clear localStorage and show login buttons
                 localStorage.removeItem('token');
@@ -119,6 +119,8 @@ async function openProfileModal() {
                 base64Image = user.image;
             } else if (user.image) {
                 document.getElementById('modalAvatarImg').src = user.image;
+            } else {
+                document.getElementById('modalAvatarImg').src = 'Assets/default_user.jpg';
             }
 
             // Hide alerts

@@ -39,7 +39,7 @@
         <!-- Avatar dropdown for logged-in users -->
         <div class="dropdown d-none" id="userMenu">
           <button class="btn btn-light rounded-circle p-0" id="avatarBtn" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 40px; height: 40px; overflow: hidden;">
-            <img id="avatarImg" src="https://via.placeholder.com/40" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;" />
+            <img id="avatarImg" src="Assets/default_user.jpg" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;" />
           </button>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><a class="dropdown-item" href="#" id="profileLink"><i class="bi bi-person me-2"></i>Profile</a></li>
@@ -759,41 +759,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
     crossorigin="anonymous"></script>
-  <script>
-    (function setupAuthActions() {
-      const authActions = document.getElementById('authActions');
-      if (!authActions) return;
-
-      const token = localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('user') || 'null');
-      if (!token) return;
-
-      const displayName = user && (user.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email);
-      authActions.innerHTML = `
-        <a href="profile.html" class="btn btn-outline-primary me-2">${displayName ? `Profile (${displayName})` : 'Profile'}</a>
-        <button type="button" class="btn btn-danger" id="logoutBtn">Logout</button>
-      `;
-
-      const logoutBtn = document.getElementById('logoutBtn');
-      if (!logoutBtn) return;
-      logoutBtn.addEventListener('click', async function () {
-        try {
-          await fetch('/api/v1/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` }
-          });
-        } catch (e) {
-          console.warn('Logout request failed', e);
-        } finally {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('loginTime');
-          window.location.href = '/login.html';
-        }
-      });
-    })();
-  </script>
+  <script src="./js/navbar.js"></script>
+  <script src="./script.js"></script>
 
   <!-- Profile Modal -->
   <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
@@ -815,7 +782,7 @@
 
           <form id="profileForm">
             <div class="text-center mb-4">
-              <img id="modalAvatarImg" src="https://via.placeholder.com/120" alt="Profile" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
+              <img id="modalAvatarImg" src="Assets/default_user.jpg" alt="Profile" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
               <br/>
               <label for="imageUpload" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-camera"></i> Change Photo

@@ -128,6 +128,8 @@ function populateForm(user) {
         base64Image = user.image;
     } else if (user.image) {
         document.getElementById('profilePreview').src = user.image;
+    } else {
+        document.getElementById('profilePreview').src = 'Assets/default_user.jpg';
     }
 }
 
