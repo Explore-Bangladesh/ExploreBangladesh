@@ -17,8 +17,8 @@ public class RoleInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        seedRole("ROLE_" + AppConstants.ADMIN_ROLE);
-        seedRole("ROLE_" + AppConstants.GUEST_ROLE);
+        seedRole(AppConstants.ADMIN_ROLE);
+        seedRole(AppConstants.GUEST_ROLE);
     }
 
     private void seedRole(String roleName) {

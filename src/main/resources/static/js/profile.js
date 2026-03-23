@@ -1,20 +1,18 @@
 let base64Image = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const token = localStorage.getItem('token');
+    // Use auth.js utilities to get token
+    const token = getAccessToken();
     
     if (!token) {
-        window.location.href = '/login.html';
+        redirectToLogin();
         return;
     }
 
     try {
-        // Fetch personal profile details
-        const response = await fetch('/api/v1/profile/me', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        // Fetch personal profile details using authenticatedFetch
+        const response = await authenticatedFetch('/api/v1/profile/me', {
+            method: 'GET'
         });
 
         if (response.ok) {
@@ -23,8 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             console.error('Failed to load profile');
             if (response.status === 401 || response.status === 403) {
-                localStorage.removeItem('token');
-                window.location.href = '/login.html';
+                logout();
             }
         }
     } catch (error) {
@@ -66,12 +63,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const res = await fetch('/api/v1/profile/me', {
+            const res = await authenticatedFetch('/api/v1/profile/me', {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify(updatedData)
             });
 
@@ -92,21 +85,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Handle Logout
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        try {
-            await fetch('/api/v1/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-        } catch (error) {
-            console.error('Error logging out:', error);
-        } finally {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login.html';
-        }
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        logout(); // Uses auth.js logout function
     });
 });
 
