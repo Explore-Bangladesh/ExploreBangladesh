@@ -9,10 +9,6 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Seeds all reference data into the database on first startup.
- * Each block is guarded by a count-check so re-runs are idempotent.
- */
 @Component
 public class DataInitializer implements ApplicationRunner {
 
