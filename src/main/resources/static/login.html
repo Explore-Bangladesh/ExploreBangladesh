@@ -188,15 +188,10 @@
                             </div>
 
                             <div class="row g-3 mb-4">
-                                <div class="col-6">
-                                    <button type="button" class="btn w-100 social-btn" onclick="socialLogin('google')">
-                                        <i class="bi bi-google me-2"></i> Google
-                                    </button>
-                                </div>
-                                <div class="col-6">
-                                    <button type="button" class="btn w-100 social-btn" onclick="socialLogin('facebook')">
-                                        <i class="bi bi-facebook me-2"></i> Facebook
-                                    </button>
+                                <div class="col-12">
+                                    <a href="/oauth2/authorization/google" class="btn btn-outline-primary w-100 social-btn">
+                                        <i class="bi bi-google me-2"></i> Sign in with Google
+                                    </a>
                                 </div>
                             </div>
 
@@ -296,9 +291,8 @@
     }
 
     function socialLogin(provider) {
-        alert(`Social login with ${provider} would be implemented here.`);
-        // In production, this would redirect to OAuth endpoint
-        // window.location.href = `/oauth2/authorization/${provider}`;
+        // Redirect to Google OAuth2 endpoint
+        window.location.href = `/oauth2/authorize?client_name=${provider}`;
     }
 
     // Auto-fill remember me email
@@ -352,5 +346,6 @@
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"
 ></script>
+<script src="./js/auth.js"></script>
 </body>
 </html>
