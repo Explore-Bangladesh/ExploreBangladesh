@@ -22,9 +22,12 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.net.URL;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.UUID;
 
 @Component
@@ -68,7 +71,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     String googleId = oAuth2User.getAttributes().getOrDefault("sub", "").toString();
                     String email = oAuth2User.getAttributes().getOrDefault("email", "").toString();
                     String name = oAuth2User.getAttributes().getOrDefault("name", "").toString();
-                    String picture = oAuth2User.getAttributes().getOrDefault("picture", "").toString();
+                    String pictureUrl = oAuth2User.getAttributes().getOrDefault("picture", "").toString();
+                    String picture = convertGoogleImageToBase64(pictureUrl);
                     
                     logger.info("Google user - ID: {}, Email: {}, Name: {}", googleId, email, name);
                     
@@ -190,6 +194,32 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             } catch (Exception writeException) {
                 logger.error("Failed to write error response", writeException);
             }
+        }
+    }
+
+
+    private String convertGoogleImageToBase64(String pictureUrl) {
+        if (pictureUrl == null || pictureUrl.isEmpty()) {
+            logger.warn("No picture URL provided from Google");
+            return "";
+        }
+
+        try {
+            logger.info("Downloading Google profile image from: {}", pictureUrl);
+            
+            URL url = new URL(pictureUrl);
+            byte[] imageBytes = url.openStream().readAllBytes();
+            
+            // Encode to Base64
+            String base64Image = "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(imageBytes);
+            
+            logger.info("Successfully converted Google image to Base64. Size: {} bytes", imageBytes.length);
+            return base64Image;
+            
+        } catch (Exception e) {
+            logger.warn("Failed to download/convert Google profile image: {}. Will use empty image.", e.getMessage());
+            logger.debug("Stack trace:", e);
+            return ""; 
         }
     }
 }
