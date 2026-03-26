@@ -1,47 +1,57 @@
+### Project Docs ###
 HELP.md
+
+### Build Output ###
 target/
-.mvn/wrapper/maven-wrapper.jar
+build/
+out/
+dist/
 !**/src/main/**/target/
 !**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### STS ###
+### Maven ###
+.mvn/timing.properties
+# Keep Maven wrapper jar tracked for reproducible builds
+!.mvn/wrapper/maven-wrapper.jar
+
+### Java / JVM Runtime ###
+*.class
+*.pid
+hs_err_pid*
+replay_pid*
+
+### IDE / Editor ###
+# Spring Tool Suite / Eclipse
 .apt_generated
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+# VS Code
 .vscode/
 
 ### Logs ###
 *.log
 logs/
 
-### OS Files ###
-.DS_Store
-Thumbs.db
-desktop.ini
-
-### Environment & Secrets ###
+### Environment / Secrets ###
 *.env
 .env.local
 .env.*.local
@@ -50,7 +60,14 @@ src/main/resources/application.properties
 application-local.properties
 application-secrets.properties
 
-### Package Files ###
+### Database / Local State ###
+*.db
+*.mv.db
+*.trace.db
+*.sqlite
+*.sqlite3
+
+### Packages / Archives ###
 *.jar
 *.war
 *.ear
@@ -58,7 +75,16 @@ application-secrets.properties
 *.tar.gz
 *.rar
 
-### H2 Database Files ###
-*.db
-*.mv.db
-*.trace.db
+### OS Files ###
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+### Misc ###
+.cache/
+*~
+*.swp
+*.swo
+
+CHANGELOG.md

@@ -323,7 +323,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.preventDefault();
             e.stopPropagation();
             console.log('Profile link clicked');
-            await openProfileModal();
+            const profileModal = document.getElementById('profileModal');
+            if (profileModal) {
+                await openProfileModal();
+            } else {
+                window.location.href = 'profile.html';
+            }
             
             // Close dropdown after clicking
             const dropdownMenu = document.getElementById('avatarDropdown');
