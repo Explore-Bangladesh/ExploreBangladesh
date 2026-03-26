@@ -84,11 +84,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Handle Logout
-    document.getElementById('logoutBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        logout(); // Uses auth.js logout function
-    });
+    // Handle legacy logout button only if present on page
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout(); // Uses auth.js logout function
+        });
+    }
 });
 
 function populateForm(user) {
