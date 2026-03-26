@@ -4,12 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nearby Places â€“ Explore Bangladesh</title>
+  <title>Nearby Places – Explore Bangladesh</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
   <link rel="stylesheet" href="./styles.css">
   <style>
-    /* â”€â”€ Page-specific overrides â”€â”€ */
+    /* ── Page-specific overrides ── */
     body {
       min-height: 100vh;
       display: flex;
@@ -113,7 +113,7 @@
       font-size: .82rem;
       color: #888;
     }
-    .distance-note::before { content: "ðŸ“ "; }
+    .distance-note::before { content: "📍 "; }
 
     /* Loading spinner overlay */
     #loadingOverlay {
@@ -142,11 +142,11 @@
   <div id="loadingOverlay">
     <div class="text-center">
       <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;"></div>
-      <p class="mt-3 text-primary fw-semibold">Detecting your locationâ€¦</p>
+      <p class="mt-3 text-primary fw-semibold">Detecting your location…</p>
     </div>
   </div>
 
-  <!-- â”€â”€ Header â”€â”€ -->
+  <!-- ── Header ── -->
   <header class="py-3 border-bottom">
     <div class="container-fluid d-flex gap-3 align-items-center justify-content-between navbar-container">
       <div>
@@ -206,7 +206,7 @@
       </div>
   </div>
 
-  <!-- â”€â”€ Hero Banner â”€â”€ -->
+  <!-- ── Hero Banner ── -->
   <div class="places-hero">
     <div>
       <h1 class="display-5 fw-bold mb-2">Discover Places Near You</h1>
@@ -214,51 +214,51 @@
     </div>
   </div>
 
-  <!-- â”€â”€ Location Detection Card â”€â”€ -->
+  <!-- ── Location Detection Card ── -->
   <div class="container">
     <div class="location-card mb-5">
       <div class="row g-3 align-items-end">
         <div class="col-md-5">
           <label class="form-label fw-semibold">Your Location</label>
           <div class="input-group">
-            <span class="input-group-text">ðŸ“</span>
+            <span class="input-group-text">📍</span>
             <input type="text" id="locationInput" class="form-control form-control-lg"
-              placeholder="e.g. Tangail, Sylhet, Cox's Bazarâ€¦"
+              placeholder="e.g. Tangail, Sylhet, Cox's Bazar…"
               list="locationSuggestions" autocomplete="off" />
             <datalist id="locationSuggestions"></datalist>
           </div>
           <small id="detectedNote" class="text-muted mt-1 d-block d-none">
-            ðŸ“ Detected: <strong id="detectedName" class="text-success"></strong>
+            📍 Detected: <strong id="detectedName" class="text-success"></strong>
             <span class="ms-2">Wrong district?
               <button type="button" class="btn btn-link btn-sm p-0 align-baseline"
                       style="font-size:inherit;" onclick="toggleDistrictPicker()">Choose manually</button>
             </span>
           </small>
           <small id="coordNote" class="text-muted mt-1 d-block d-none" style="font-size:0.78rem;">
-            ðŸ›œ Browser coordinates: <span id="coordDisplay"></span>
-            &nbsp;â€”&nbsp;<a id="coordMapLink" href="#" target="_blank" rel="noopener" style="font-size:inherit;">Verify on map â†—</a>
+            🛜 Browser coordinates: <span id="coordDisplay"></span>
+            &nbsp;—&nbsp;<a id="coordMapLink" href="#" target="_blank" rel="noopener" style="font-size:inherit;">Verify on map ↗</a>
           </small>
           <div id="districtPickerRow" class="mt-2 d-none">
             <select id="districtSelect" class="form-select form-select-sm"
                     style="max-width:260px;" onchange="selectDistrict(this.value)">
-              <option value="">â€” Select your district â€”</option>
+              <option value="">— Select your district —</option>
             </select>
           </div>
         </div>
         <div class="col-md-3">
           <button id="btnDetect" class="btn btn-outline-primary btn-lg w-100 btn-detect"
             onclick="detectLocation()">
-            ðŸ›°ï¸ Detect My Location
+            🛰️ Detect My Location
           </button>
         </div>
         <div class="col-md-2">
           <button class="btn btn-primary btn-lg w-100" onclick="searchByInput()">
-            ðŸ” Search
+            🔍 Search
           </button>
         </div>
         <div class="col-md-2">
           <button class="btn btn-outline-secondary btn-lg w-100" onclick="clearResults()">
-            âœ• Clear
+            ✕ Clear
           </button>
         </div>
       </div>
@@ -266,7 +266,7 @@
       <div id="alertBox" class="alert mt-3 d-none" role="alert"></div>
     </div>
 
-    <!-- â”€â”€ Results Header â”€â”€ -->
+    <!-- ── Results Header ── -->
     <div id="resultsHeader" class="d-none mb-4">
       <!-- Search and Sort Bar -->
       <div class="mb-3 p-3 bg-light rounded-3">
@@ -274,29 +274,29 @@
           <div class="col-md-6">
             <label class="form-label fw-semibold small mb-1">Search in Results</label>
             <div class="input-group">
-              <span class="input-group-text">ðŸ”</span>
+              <span class="input-group-text">🔍</span>
               <input type="text" id="searchQuery" class="form-control" 
                 placeholder="Search by name, highlights, or description..."
                 onkeyup="handleSearchAndSort()" />
-              <button class="btn btn-outline-secondary" onclick="clearSearchQuery()">âœ•</button>
+              <button class="btn btn-outline-secondary" onclick="clearSearchQuery()">✕</button>
             </div>
           </div>
           <div class="col-md-3">
             <label class="form-label fw-semibold small mb-1">Sort By</label>
             <select id="sortBy" class="form-select" onchange="handleSearchAndSort()">
-              <option value="rating">â­ Rating (High to Low)</option>
-              <option value="name">ðŸ”¤ Name (A-Z)</option>
-              <option value="category">ðŸ“‚ Category</option>
+              <option value="rating">⭐ Rating (High to Low)</option>
+              <option value="name">🔤 Name (A-Z)</option>
+              <option value="category">📂 Category</option>
             </select>
           </div>
           <div class="col-md-3">
             <label class="form-label fw-semibold small mb-1">View</label>
             <div class="btn-group w-100" role="group">
               <button type="button" class="btn btn-outline-primary active" id="btnGridView" onclick="setViewMode('grid')">
-                <span>âŠž</span> Grid
+                <span>⊞</span> Grid
               </button>
               <button type="button" class="btn btn-outline-primary" id="btnListView" onclick="setViewMode('list')">
-                <span>â˜°</span> List
+                <span>☰</span> List
               </button>
             </div>
           </div>
@@ -314,18 +314,18 @@
       <hr/>
     </div>
 
-    <!-- â”€â”€ Place Cards Grid â”€â”€ -->
+    <!-- ── Place Cards Grid ── -->
     <div id="placesGrid" class="row g-4 mb-5"></div>
 
-    <!-- â”€â”€ Empty State â”€â”€ -->
+    <!-- ── Empty State ── -->
     <div id="emptyState" class="empty-state d-none">
-      <div class="icon">ðŸ—ºï¸</div>
+      <div class="icon">🗺️</div>
       <h4>No places found for this location</h4>
       <p class="text-muted">Try a different district or city name, or use "Detect My Location".</p>
     </div>
   </div>
 
-  <!-- â”€â”€ Footer â”€â”€ -->
+  <!-- ── Footer ── -->
   <footer class="footer bg-dark text-light py-4">
     <div class="container">
       <div class="row">
@@ -333,7 +333,7 @@
           <p class="text-muted small mb-0">&copy; 2026 Explore Bangladesh. All rights reserved.</p>
         </div>
         <div class="col-md-6 text-center text-md-end">
-          <p class="text-muted small mb-0">Made with <span class="text-danger">â™¥</span> in Bangladesh</p>
+          <p class="text-muted small mb-0">Made with <span class="text-danger">&hearts;</span> in Bangladesh</p>
         </div>
       </div>
     </div>
@@ -351,7 +351,7 @@
     let currentLocation = '';
     let viewMode = 'grid'; // 'grid' or 'list'
 
-    // â”€â”€ Load supported location suggestions on page load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Load supported location suggestions on page load ──────────────────
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         const res = await fetch(`${API_BASE}/locations`);
@@ -381,7 +381,7 @@
       }
     });
 
-    // â”€â”€ Browser geolocation â†’ reverse geocode â†’ fetch places â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Browser geolocation → reverse geocode → fetch places ─────────────
     function detectLocation() {
       if (!navigator.geolocation) {
         showAlert('warning', 'Your browser does not support geolocation. Please type your location manually.');
@@ -399,20 +399,20 @@
           // Show the raw coordinates so the user can verify if the browser got the right location
           const coordEl = document.getElementById('coordDisplay');
           const mapLink  = document.getElementById('coordMapLink');
-          coordEl.textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}  (Â±${Math.round(accuracy)} m)`;
+          coordEl.textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}  (±${Math.round(accuracy)} m)`;
           mapLink.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
           document.getElementById('coordNote').classList.remove('d-none');
 
           // Improved accuracy handling for mobile data users
           if (accuracy > 10000) {
             showAlert('info',
-              `ðŸ“¡ Using mobile network location (Â±${Math.round(accuracy / 1000)} km). Location may be approximate. If detected district is wrong, please select manually below.`);
+              `📡 Using mobile network location (±${Math.round(accuracy / 1000)} km). Location may be approximate. If detected district is wrong, please select manually below.`);
           } else if (accuracy > 5000) {
             showAlert('info',
-              `ðŸ“¶ Using WiFi/cell tower triangulation (Â±${Math.round(accuracy / 1000)} km accuracy). Check detected location and correct if needed.`);
+              `📶 Using WiFi/cell tower triangulation (±${Math.round(accuracy / 1000)} km accuracy). Check detected location and correct if needed.`);
           } else if (accuracy > 1000) {
             showAlert('success',
-              `âœ“ Good location accuracy (Â±${Math.round(accuracy)} m). Detecting your upazila...`);
+              `✓ Good location accuracy (±${Math.round(accuracy)} m). Detecting your upazila...`);
           }
 
           try {
@@ -442,7 +442,7 @@
             // Create display label showing both upazila and district for clarity
             let displayLabel = district;
             if (upazila && upazila !== district) {
-              displayLabel = `${upazila} â†’ ${district} District`;
+              displayLabel = `${upazila} → ${district} District`;
             }
 
             // Additional context from full address for user verification
@@ -458,7 +458,7 @@
             // Show upazila info if available
             if (upazila && upazila !== district) {
               showAlert('success', 
-                `âœ“ Your upazila: ${upazila}. Showing places in ${district} District. District correct?`);
+                `✓ Your upazila: ${upazila}. Showing places in ${district} District. District correct?`);
             }
             
             fetchPlaces(district);
@@ -473,11 +473,11 @@
         (err) => {
           let msg = 'Could not detect your location.';
           if (err.code === err.PERMISSION_DENIED) {
-            msg = 'ðŸš« Location permission denied. Please allow location access in browser settings, or type your location manually.';
+            msg = '🚫 Location permission denied. Please allow location access in browser settings, or type your location manually.';
           } else if (err.code === err.POSITION_UNAVAILABLE) {
-            msg = 'ðŸ“µ Location unavailable. Your device may not have GPS/network connection. Please select your district manually.';
+            msg = '📵 Location unavailable. Your device may not have GPS/network connection. Please select your district manually.';
           } else if (err.code === err.TIMEOUT) {
-            msg = 'â±ï¸ Location request timed out. Try again or select your district manually.';
+            msg = '⏱️ Location request timed out. Try again or select your district manually.';
           }
           showAlert('warning', msg);
           document.getElementById('districtPickerRow').classList.remove('d-none');
@@ -512,7 +512,7 @@
       document.getElementById('loadingOverlay').classList.remove('active');
     }
 
-    // â”€â”€ Manual search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Manual search ─────────────────────────────────────────────────────
     function searchByInput() {
       const loc = document.getElementById('locationInput').value.trim();
       if (!loc) {
@@ -530,7 +530,7 @@
       });
     });
 
-    // â”€â”€ Handle search and sort â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Handle search and sort ────────────────────────────────────────────
     function handleSearchAndSort() {
       if (!currentLocation) return;
       fetchPlaces(currentLocation);
@@ -550,7 +550,7 @@
       }
     }
 
-    // â”€â”€ API call â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── API call ──────────────────────────────────────────────────────────
     async function fetchPlaces(location) {
       hideAlert();
       document.getElementById('placesGrid').innerHTML = '';
@@ -577,7 +577,7 @@
       }
     }
 
-    // â”€â”€ Render results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Render results ────────────────────────────────────────────────────
     function renderResults(location, places) {
       document.getElementById('locationLabel').textContent = location;
       document.getElementById('resultsHeader').classList.remove('d-none');
@@ -631,40 +631,40 @@
         
         // Additional info if available
         const additionalInfo = [];
-        if (place.entranceFee) additionalInfo.push(`ðŸ’µ ${place.entranceFee}`);
-        if (place.bestTimeToVisit) additionalInfo.push(`ðŸ“… Best: ${place.bestTimeToVisit}`);
-        if (place.estimatedDuration) additionalInfo.push(`â±ï¸ ${place.estimatedDuration} min`);
+        if (place.entranceFee) additionalInfo.push(`💵 ${place.entranceFee}`);
+        if (place.bestTimeToVisit) additionalInfo.push(`📅 Best: ${place.bestTimeToVisit}`);
+        if (place.estimatedDuration) additionalInfo.push(`⏱️ ${place.estimatedDuration} min`);
         const infoHtml = additionalInfo.length > 0 
-          ? `<p class="small text-muted mb-2" style="line-height:1.6">${additionalInfo.join(' â€¢ ')}</p>` 
+          ? `<p class="small text-muted mb-2" style="line-height:1.6">${additionalInfo.join(' • ')}</p>` 
           : '';
 
         // New: Travel details section with interactive tabs (using simple toggle)
-        const upazilaBadge = place.upazila ? `<span class="badge bg-info text-dark me-2">ðŸ“ ${escapeHtml(place.upazila)} Upazila</span>` : '';
+        const upazilaBadge = place.upazila ? `<span class="badge bg-info text-dark me-2">📍 ${escapeHtml(place.upazila)} Upazila</span>` : '';
         
         const travelDetailsHtml = `
           <div class="mt-3 border-top pt-2">
             <button class="btn btn-sm btn-outline-primary w-100" type="button" 
                     onclick="toggleTravelDetails('${place.id}'); return false;">
-              â„¹ï¸ View Travel Details
+              ℹ️ View Travel Details
             </button>
             <div id="details-${place.id}" style="display: none;" class="mt-2">
               <!-- Travel Options Buttons -->
               <div class="btn-group w-100 mb-2" role="group" style="flex-wrap: wrap;">
                 <button type="button" class="btn btn-sm btn-outline-primary" 
                         onclick="showTravelDetail('${place.id}', 'howto'); return false;">
-                  ðŸš— How to Go
+                  🚗 How to Go
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-success" 
                         onclick="showTravelDetail('${place.id}', 'hotels'); return false;">
-                  ðŸ¨ Hotels
+                  🏨 Hotels
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-warning" 
                         onclick="showTravelDetail('${place.id}', 'cars'); return false;">
-                  ðŸš™ Cars
+                  🚙 Cars
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-info" 
                         onclick="showTravelDetail('${place.id}', 'guides'); return false;">
-                  ðŸ‘¤ Guides
+                  👤 Guides
                 </button>
               </div>
               
@@ -672,31 +672,31 @@
               <div class="card card-body bg-light small" style="font-size:0.85rem; min-height: 80px;">
                 <!-- How to Go -->
                 <div id="howto-${place.id}" class="travel-detail-content" style="display: none;">
-                  <strong class="text-primary d-block mb-2">ðŸš— How to Go:</strong>
+                  <strong class="text-primary d-block mb-2">🚗 How to Go:</strong>
                   <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.howToGo || 'Transportation information not available. Please check Google Maps for directions.')}</p>
                 </div>
                 
                 <!-- Hotels -->
                 <div id="hotels-${place.id}" class="travel-detail-content" style="display: none;">
-                  <strong class="text-success d-block mb-2">ðŸ¨ Hotels & Accommodations:</strong>
+                  <strong class="text-success d-block mb-2">🏨 Hotels & Accommodations:</strong>
                   <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.nearbyHotels || 'No hotel information available. Use our Hotels page to search for accommodations.')}</p>
                 </div>
                 
                 <!-- Cars -->
                 <div id="cars-${place.id}" class="travel-detail-content" style="display: none;">
-                  <strong class="text-warning d-block mb-2">ðŸš™ Car Rentals:</strong>
+                  <strong class="text-warning d-block mb-2">🚙 Car Rentals:</strong>
                   <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.nearbyCarRentals || 'No car rental information available. Book through our Cars page or contact local agencies.')}</p>
                 </div>
                 
                 <!-- Guides -->
                 <div id="guides-${place.id}" class="travel-detail-content" style="display: none;">
-                  <strong class="text-info d-block mb-2">ðŸ‘¤ Tour Guides:</strong>
+                  <strong class="text-info d-block mb-2">👤 Tour Guides:</strong>
                   <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.availableGuides || 'No tour guides available at this location. Contact local tourism office or book through our Travel Guide page.')}</p>
                 </div>
                 
                 <!-- Initial Message -->
                 <div id="initial-${place.id}" class="text-center text-muted py-3">
-                  <p class="mb-0">ðŸ‘† Click a button above to view specific travel information</p>
+                  <p class="mb-0">👆 Click a button above to view specific travel information</p>
                 </div>
               </div>
             </div>
@@ -765,7 +765,7 @@
       const full  = Math.floor(rating);
       const half  = rating - full >= 0.5 ? 1 : 0;
       const empty = 5 - full - half;
-      return 'â˜…'.repeat(full) + (half ? 'Â½' : '') + 'â˜†'.repeat(empty);
+      return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
     }
 
     function escapeHtml(str) {
@@ -774,7 +774,7 @@
                 .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Helpers ───────────────────────────────────────────────────────────
     function showAlert(type, message) {
       const box = document.getElementById('alertBox');
       box.className = `alert alert-${type} mt-3`;
@@ -800,7 +800,7 @@
       currentLocation = '';
     }
 
-    // â”€â”€ Travel Details Tab Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Travel Details Tab Functions ──────────────────────────────────────
     function toggleTravelDetails(placeId) {
       console.log(`Toggling travel details for: ${placeId}`);
       const detailsDiv = document.getElementById(`details-${placeId}`);
