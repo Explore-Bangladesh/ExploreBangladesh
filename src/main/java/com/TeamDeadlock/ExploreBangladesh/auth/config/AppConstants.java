@@ -12,7 +12,8 @@ public class AppConstants {
             "/api/flights/**",
             "/api/guides/**",
             "/api/hotels/**",
-            "/api/places/**"
+            "/api/places/**",
+            "/api/plans/**"
     };
 
     public static final String[] AUTH_ADMIN_URLS = {

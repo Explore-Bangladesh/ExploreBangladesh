@@ -1,4 +1,17 @@
 /* Offcanvas sidebar styles */
+:root {
+    --font-size-caption: 0.78rem;
+    --font-size-small: 0.875rem;
+    --font-size-body: 1rem;
+    --font-size-lead: 1.06rem;
+    --font-size-nav: 0.98rem;
+    --font-size-btn: 0.94rem;
+}
+
+html {
+    font-size: 93.75%;
+}
+
 .offcanvas {
     width: 240px !important;
     top: 0 !important;
@@ -15,7 +28,7 @@ main {
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(Assets/green\ scenary.webp);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(Assets/green\ scenary.jpg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -68,7 +81,7 @@ main {
 
 .search-box-card .form-label {
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: var(--font-size-small);
     margin-bottom: 0.5rem;
 }
 
@@ -158,11 +171,135 @@ header {
     flex-grow: 1;
 }
 
+.main-navigation .nav {
+    gap: 0.45rem;
+}
+
+.main-navigation .nav-link {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--font-size-nav);
+    font-weight: 600;
+    padding: 0.5rem 0.95rem !important;
+    border-radius: 999px;
+    color: #334155 !important;
+    line-height: 1.2;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.main-navigation .nav-link:hover {
+    background: #eef4ff;
+    color: #0d6efd !important;
+}
+
+.main-navigation .nav-link.active,
+.main-navigation .nav-link.text-primary {
+    font-weight: 700;
+    color: #0d6efd !important;
+    background: #e8f0ff;
+}
+
+#authActions .btn {
+    font-size: var(--font-size-btn);
+    font-weight: 600;
+}
+
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    padding-top: 70px;
+    font-size: var(--font-size-body);
+    line-height: 1.5;
+    padding-top: 64px;
     transition: margin-left 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    line-height: 1.25;
+}
+
+.lead {
+    font-size: var(--font-size-lead);
+    line-height: 1.55;
+}
+
+.small,
+small {
+    font-size: var(--font-size-small);
+}
+
+.display-1 {
+    font-size: clamp(2.25rem, 5vw, 3.4rem);
+}
+
+.display-2 {
+    font-size: clamp(2rem, 4.4vw, 3rem);
+}
+
+.display-3 {
+    font-size: clamp(1.85rem, 3.8vw, 2.6rem);
+}
+
+.display-4 {
+    font-size: clamp(1.75rem, 3.4vw, 2.35rem);
+}
+
+.display-5 {
+    font-size: clamp(1.55rem, 3vw, 2.05rem);
+}
+
+.display-6 {
+    font-size: clamp(1.35rem, 2.6vw, 1.7rem);
+}
+
+body.has-blended-hero-nav {
+    padding-top: 0;
+}
+
+body.has-blended-hero-nav header.navbar-blend {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.15));
+    box-shadow: none;
+    border-bottom: none !important;
+    z-index: 1050;
+    backdrop-filter: blur(2px);
+}
+
+body.has-blended-hero-nav header.navbar-blend .nav-link {
+    color: #ffffff !important;
+}
+
+body.has-blended-hero-nav header.navbar-blend .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff !important;
+}
+
+body.has-blended-hero-nav header.navbar-blend .nav-link.active,
+body.has-blended-hero-nav header.navbar-blend .nav-link.text-primary {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff !important;
+}
+
+body.has-blended-hero-nav header.navbar-blend #loginBtn {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.65);
+    background: transparent;
+}
+
+body.has-blended-hero-nav header.navbar-blend #signupBtn {
+    background: #ffffff;
+    color: #0d6efd;
+    border-color: #ffffff;
+}
+
+body.has-blended-hero-nav .hero-with-blend-nav {
+    padding-top: 140px !important;
 }
 
 /* Allow body to scroll when offcanvas is open */
@@ -194,6 +331,14 @@ body.offcanvas-open .footer {
 /* Footer Styles */
 .footer {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.footer .row {
+    align-items: center;
+}
+
+.footer p {
+    line-height: 1.35;
 }
 
 .footer h5,
