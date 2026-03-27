@@ -375,7 +375,7 @@
 
             if (response.ok) {
                 alert('Account created successfully! Please login.');
-                window.location.href = '/';
+                window.location.href = '/login.html';
             } else {
                 const error = await response.text();
                 alert('Signup failed: ' + error);
