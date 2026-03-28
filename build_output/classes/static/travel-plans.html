@@ -1,0 +1,494 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packages - Explore Bangladesh</title>
+    <meta name="description"
+        content="Explore Bangladesh packages with budget, standard, or premium options covering all 8 divisions.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+        /* Hero */
+        .plans-hero {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 40%, #2c5364 100%);
+            padding: 90px 0 70px;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plans-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(79, 195, 247, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .plans-hero h1 {
+            font-size: 2.35rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .plans-hero p {
+            font-size: 1.02rem;
+            opacity: 0.85;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Tier Cards */
+        .tier-section {
+            margin-top: -50px;
+            position: relative;
+            z-index: 10;
+            padding: 0 16px;
+        }
+
+        .tier-grid {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .tier-card {
+            flex: 1;
+            min-width: 260px;
+            max-width: 320px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tier-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
+        }
+
+        .tier-card.active {
+            border-color: var(--tier-color);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+        }
+
+        .tier-card .tier-icon {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .tier-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .tier-card .tier-range {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .tier-card .tier-features {
+            font-size: 0.88rem;
+            color: #666;
+            line-height: 1.7;
+        }
+
+        .tier-card[data-tier="BUDGET"] {
+            --tier-color: #4caf50;
+        }
+
+        .tier-card[data-tier="BUDGET"] .tier-icon {
+            color: #4caf50;
+        }
+
+        .tier-card[data-tier="BUDGET"] .tier-range {
+            color: #4caf50;
+        }
+
+        .tier-card[data-tier="STANDARD"] {
+            --tier-color: #2196f3;
+        }
+
+        .tier-card[data-tier="STANDARD"] .tier-icon {
+            color: #2196f3;
+        }
+
+        .tier-card[data-tier="STANDARD"] .tier-range {
+            color: #2196f3;
+        }
+
+        .tier-card[data-tier="PREMIUM"] {
+            --tier-color: #ff9800;
+        }
+
+        .tier-card[data-tier="PREMIUM"] .tier-icon {
+            color: #ff9800;
+        }
+
+        .tier-card[data-tier="PREMIUM"] .tier-range {
+            color: #ff9800;
+        }
+
+        .tier-card.active[data-tier="BUDGET"] {
+            border-color: #4caf50;
+            background: linear-gradient(180deg, #f1f8e9 0%, #fff 100%);
+        }
+
+        .tier-card.active[data-tier="STANDARD"] {
+            border-color: #2196f3;
+            background: linear-gradient(180deg, #e3f2fd 0%, #fff 100%);
+        }
+
+        .tier-card.active[data-tier="PREMIUM"] {
+            border-color: #ff9800;
+            background: linear-gradient(180deg, #fff3e0 0%, #fff 100%);
+        }
+
+        /* Plan Cards Grid */
+        .plans-section {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 16px;
+        }
+
+        .plans-section h2 {
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: #1a1a2e;
+        }
+
+        .plan-card {
+            background: #fff;
+            border-radius: 18px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.14);
+        }
+
+        .plan-image-wrap {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .plan-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s;
+        }
+
+        .plan-card:hover .plan-image-wrap img {
+            transform: scale(1.05);
+        }
+
+        .tier-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tier-budget {
+            background: #4caf50;
+            color: #fff;
+        }
+
+        .tier-standard {
+            background: #2196f3;
+            color: #fff;
+        }
+
+        .tier-premium {
+            background: #ff9800;
+            color: #fff;
+        }
+
+        .duration-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .plan-body {
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .plan-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #1a1a2e;
+        }
+
+        .plan-division {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .plan-desc {
+            font-size: 0.88rem;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            flex-grow: 1;
+        }
+
+        .plan-highlights {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .highlight-tag {
+            background: #f0f4ff;
+            color: #3f51b5;
+            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .plan-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .plan-price {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1a1a2e;
+        }
+
+        .plan-group {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .btn-view-itinerary {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+
+        .btn-view-itinerary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Footer */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .footer {
+            margin-top: auto;
+        }
+
+        @media(max-width:768px) {
+            .plans-hero h1 {
+                font-size: 2rem;
+            }
+
+            .tier-card {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="py-3 border-bottom bg-white">
+        <div class="container-fluid d-flex gap-3 align-items-center justify-content-between navbar-container">
+            <a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none menu-toggle"
+               data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Menu">
+                <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 7h22M4 15h22M4 23h22" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </a>
+            <nav class="main-navigation d-none d-lg-block">
+                <ul class="nav justify-content-center">
+                    <li><a href="hotels.html" class="nav-link px-2 text-dark">Hotels</a></li>
+                    <li><a href="flights.html" class="nav-link px-2 text-dark">Flights</a></li>
+                    <li><a href="cars.html" class="nav-link px-2 text-dark">Cars</a></li>
+                    <li><a href="travel-plans.html" class="nav-link px-2 text-primary fw-bold">Packages</a></li>
+                    <li><a href="guides.html" class="nav-link px-2 text-dark">Travel Guide</a></li>
+                    <li><a href="places.html" class="nav-link px-2 text-dark">Nearby Places</a></li>
+                </ul>
+            </nav>
+            <div class="text-end d-flex align-items-center gap-2" id="authActions">
+                <a href="login.html" class="btn btn-outline-primary me-2" id="loginBtn">Login</a>
+                <a href="signup.html" class="btn btn-primary" id="signupBtn">Sign-up</a>
+                <div class="dropdown d-none position-relative" id="userMenu" style="display: none;">
+                    <button class="btn btn-light rounded-circle p-0" id="avatarBtn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-haspopup="true" style="width: 40px; height: 40px; overflow: hidden; flex-shrink: 0;">
+                        <img id="avatarImg" src="Assets/default_user.jpg" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;" />
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" id="avatarDropdown" style="position: absolute; inset: auto 0px 0px auto; margin: 0; min-width: 10rem;">
+                        <li><a class="dropdown-item" href="#" id="profileLink"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="#" id="logoutLink"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel" data-bs-backdrop="false">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="sidebarLabel">Explore Bangladesh</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <ul class="list-unstyled">
+                <li><a class="dropdown-item py-2" href="index.html">Home</a></li>
+                <li><a class="dropdown-item py-2" href="hotels.html">Hotels</a></li>
+                <li><a class="dropdown-item py-2" href="flights.html">Flights</a></li>
+                <li><a class="dropdown-item py-2" href="cars.html">Cars</a></li>
+                <li><a class="dropdown-item py-2" href="travel-plans.html">Packages</a></li>
+                <li><a class="dropdown-item py-2" href="guides.html">Travel Guide</a></li>
+                <li><a class="dropdown-item py-2" href="places.html">Nearby Places</a></li>
+                <!-- <li><hr class="dropdown-divider"/></li> -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <section class="plans-hero">
+        <div class="container">
+            <h1>Choose Your Package</h1>
+            <p>Choose your budget tier and explore detailed day-by-day itineraries across all 8 divisions of Bangladesh
+            </p>
+        </div>
+    </section>
+
+    <!-- Tier Selection -->
+    <section class="tier-section">
+        <div class="tier-grid">
+            <div class="tier-card" data-tier="BUDGET">
+                <span class="tier-icon"><i class="bi bi-backpack2-fill"></i></span>
+                <h3>Budget</h3>
+                <div class="tier-range">৳3,000 - ৳5,500</div>
+                <div class="tier-features">
+                    Local transport & buses<br>
+                    Budget guesthouses<br>
+                    Street food & local eateries<br>
+                    Self-guided exploration
+                </div>
+            </div>
+            <div class="tier-card" data-tier="STANDARD">
+                <span class="tier-icon"><i class="bi bi-suitcase-lg-fill"></i></span>
+                <h3>Standard</h3>
+                <div class="tier-range">৳10,000 - ৳15,000</div>
+                <div class="tier-features">
+                    AC transport<br>
+                    3-star hotels<br>
+                    Mid-range restaurants<br>
+                    Guided tours included
+                </div>
+            </div>
+            <div class="tier-card" data-tier="PREMIUM">
+                <span class="tier-icon"><i class="bi bi-gem"></i></span>
+                <h3>Premium</h3>
+                <div class="tier-range">৳20,000 - ৳35,000</div>
+                <div class="tier-features">
+                    Flights & private cars<br>
+                    4-5 star resorts<br>
+                    Fine dining experiences<br>
+                    Private guides & spa
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Plans Grid -->
+    <section class="plans-section">
+        <h2>All Packages</h2>
+        <div class="row" id="planGrid">
+            <p class="text-center text-muted">Loading plans...</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer bg-dark text-light py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-muted small mb-0">&copy; 2026 Explore Bangladesh. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="text-muted small mb-0">Made with <span class="text-danger">&hearts;</span> in Bangladesh</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+    <script src="./js/navbar.js"></script>
+    <script src="./js/travel-plans.js"></script>
+</body>
+
+</html>
