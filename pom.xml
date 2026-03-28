@@ -104,6 +104,7 @@
 	</dependencies>
 
 	<build>
+		<directory>${project.basedir}/build_output</directory>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -121,6 +122,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<mainClass>com.TeamDeadlock.ExploreBangladesh.ExploreBangladeshApplication</mainClass>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
