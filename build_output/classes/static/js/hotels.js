@@ -101,6 +101,7 @@ function displayResults(data, searchedDestination) {
     const resultsHeader = document.getElementById('resultsHeader');
     const loadingSpinner = document.getElementById('loadingSpinner');
     const noResults = document.getElementById('noResults');
+    const mapPreviewCard = document.getElementById('mapPreviewCard');
 
     // Hide loading spinner
     loadingSpinner.classList.remove('active');
@@ -110,8 +111,13 @@ function displayResults(data, searchedDestination) {
 
     if (!features || features.length === 0) {
         noResults.classList.add('active');
+        noResults.querySelector('h4').textContent = 'No hotels found';
+        noResults.querySelector('p').textContent = 'Try adjusting your search criteria';
         resultsHeader.style.display = 'none';
+        mapPreviewCard.style.display = 'none';
         hotelsGrid.innerHTML = '';
+        const existingNav = document.getElementById('paginationNav');
+        if (existingNav) existingNav.remove();
         return;
     }
 
@@ -133,7 +139,6 @@ function displayResults(data, searchedDestination) {
     window.itemsPerPage = 15;
 
     // Show the map preview card and update the static map image
-    const mapPreviewCard = document.getElementById('mapPreviewCard');
     mapPreviewCard.style.display = 'block';
 
     // Update static map centered on first hotel
@@ -144,8 +149,8 @@ function displayResults(data, searchedDestination) {
         mapPreviewImg.src = `https://api.geoapify.com/v1/staticmap?style=osm-bright&width=300&height=200&center=lonlat:${lon},${lat}&zoom=12&apiKey=2a42881f098048d7ae41b52f7c540f33`;
     }
 
-    renderPage(1);
     setupPaginationControls();
+    renderPage(1);
 }
 
 function renderPage(page) {
@@ -177,16 +182,20 @@ function setupPaginationControls() {
     const existingNav = document.getElementById('paginationNav');
     if (existingNav) existingNav.remove();
 
+    const totalPages = Math.ceil(window.allHotels.length / window.itemsPerPage);
+    const prevDisabledClass = window.currentPage === 1 ? 'disabled' : '';
+    const nextDisabledClass = window.currentPage === totalPages ? 'disabled' : '';
+
     const paginationHtml = `
         <nav id="paginationNav" class="mt-4" aria-label="Hotel pagination">
             <ul class="pagination justify-content-center">
-                <li class="page-item" id="prevBtn">
+                <li class="page-item ${prevDisabledClass}" id="prevBtn">
                     <button class="page-link" onclick="changePage(-1)">Previous</button>
                 </li>
                 <li class="page-item disabled">
-                    <span class="page-link" id="pageIndicator">Page 1</span>
+                    <span class="page-link" id="pageIndicator">Page ${window.currentPage} of ${totalPages}</span>
                 </li>
-                <li class="page-item" id="nextBtn">
+                <li class="page-item ${nextDisabledClass}" id="nextBtn">
                     <button class="page-link" onclick="changePage(1)">Next</button>
                 </li>
             </ul>
@@ -371,15 +380,23 @@ function showLoading() {
     document.getElementById('loadingSpinner').classList.add('active');
     document.getElementById('noResults').classList.remove('active');
     document.getElementById('resultsHeader').style.display = 'none';
+    document.getElementById('mapPreviewCard').style.display = 'none';
     document.getElementById('hotelsGrid').innerHTML = '';
+    const existingNav = document.getElementById('paginationNav');
+    if (existingNav) existingNav.remove();
 }
 
 // Show error message
 function showError(message) {
     document.getElementById('loadingSpinner').classList.remove('active');
     document.getElementById('noResults').classList.add('active');
+    document.getElementById('resultsHeader').style.display = 'none';
+    document.getElementById('mapPreviewCard').style.display = 'none';
+    document.getElementById('hotelsGrid').innerHTML = '';
     document.getElementById('noResults').querySelector('h4').textContent = 'Error';
     document.getElementById('noResults').querySelector('p').textContent = message;
+    const existingNav = document.getElementById('paginationNav');
+    if (existingNav) existingNav.remove();
 }
 
 // Update check-out min date when check-in changes
