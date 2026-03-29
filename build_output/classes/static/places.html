@@ -1,0 +1,859 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nearby Places – Explore Bangladesh</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    /* ── Page-specific overrides ── */
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .footer {
+      margin-top: auto !important;
+    }
+
+    .places-hero {
+      background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)),
+                  url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400') center/cover no-repeat;
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #fff;
+      padding: 2rem;
+    }
+
+    /* Location detection card */
+    .location-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.12);
+      padding: 2rem;
+      margin-top: -60px;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Detect button pulse ring */
+    @keyframes pulseRing {
+      0%   { transform: scale(1);   opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .btn-detect {
+      position: relative;
+    }
+    .btn-detect.detecting::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(13,110,253,.4);
+      animation: pulseRing .9s ease-out infinite;
+    }
+
+    /* Place cards */
+    .place-card {
+      border: none;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+      transition: transform .35s ease, box-shadow .35s ease;
+      height: 100%;
+    }
+    .place-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 28px rgba(0,0,0,.16);
+    }
+    .place-card-img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    .place-card-body {
+      padding: 1.25rem;
+    }
+    .place-category-badge {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .category-Nature    { background: #d4edda; color: #155724; }
+    .category-Heritage  { background: #fff3cd; color: #856404; }
+    .category-Religious { background: #cce5ff; color: #004085; }
+    .category-Beach     { background: #d1ecf1; color: #0c5460; }
+    .category-Wildlife  { background: #f8d7da; color: #721c24; }
+
+    .star-rating { color: #ffc107; font-size: .9rem; }
+    .star-rating span { color: #555; font-size: .85rem; }
+
+    .highlight-pill {
+      display: inline-block;
+      background: #f0f4ff;
+      color: #3366cc;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: .78rem;
+      margin: 2px;
+    }
+
+    /* Distance note */
+    .distance-note {
+      font-size: .82rem;
+      color: #888;
+    }
+    .distance-note::before { content: "📍 "; }
+
+    /* Loading spinner overlay */
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.7);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    #loadingOverlay.active { display: flex; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #888;
+    }
+    .empty-state .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+  </style>
+</head>
+
+<body>
+  <!-- Loading overlay -->
+  <div id="loadingOverlay">
+    <div class="text-center">
+      <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;"></div>
+      <p class="mt-3 text-primary fw-semibold">Detecting your location…</p>
+    </div>
+  </div>
+
+  <!-- ── Header ── -->
+  <header class="py-3 border-bottom">
+    <div class="container-fluid d-flex gap-3 align-items-center justify-content-between navbar-container">
+      <div>
+        <a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none menu-toggle"
+          data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Menu">
+          <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+            <path d="M4 7h22M4 15h22M4 23h22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </a>
+      </div>
+      <nav class="main-navigation d-none d-lg-block">
+        <ul class="nav justify-content-center">
+          <li><a href="hotels.html"  class="nav-link px-2 text-dark">Hotels</a></li>
+          <li><a href="flights.html" class="nav-link px-2 text-dark">Flights</a></li>
+          <li><a href="cars.html"    class="nav-link px-2 text-dark">Cars</a></li>
+          <li><a href="travel-plans.html" class="nav-link px-2 text-dark">Packages</a></li>
+          <li><a href="guides.html"  class="nav-link px-2 text-dark">Travel Guide</a></li>
+          <li><a href="places.html"  class="nav-link px-2 text-primary fw-bold active">Nearby Places</a></li>
+        </ul>
+      </nav>
+      <div class="text-end d-flex align-items-center gap-2" id="authActions">
+        <a href="login.html" class="btn btn-outline-primary me-2" id="loginBtn">Login</a>
+        <a href="signup.html" class="btn btn-primary" id="signupBtn">Sign-up</a>
+        <div class="dropdown d-none position-relative" id="userMenu" style="display: none;">
+          <button class="btn btn-light rounded-circle p-0" id="avatarBtn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-haspopup="true" style="width: 40px; height: 40px; overflow: hidden; flex-shrink: 0;">
+            <img id="avatarImg" src="Assets/default_user.jpg" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;" />
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" id="avatarDropdown" style="position: absolute; inset: auto 0px 0px auto; margin: 0; min-width: 10rem;">
+            <li><a class="dropdown-item" href="#" id="profileLink"><i class="bi bi-person me-2"></i>Profile</a></li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            <li><a class="dropdown-item" href="#" id="logoutLink"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel" data-bs-backdrop="false">
+      <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="sidebarLabel">Explore Bangladesh</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+          <ul class="list-unstyled">
+              <li><a class="dropdown-item py-2" href="index.html">Home</a></li>
+              <li><a class="dropdown-item py-2" href="hotels.html">Hotels</a></li>
+              <li><a class="dropdown-item py-2" href="flights.html">Flights</a></li>
+              <li><a class="dropdown-item py-2" href="cars.html">Cars</a></li>
+              <li><a class="dropdown-item py-2" href="travel-plans.html">Packages</a></li>
+              <li><a class="dropdown-item py-2" href="guides.html">Travel Guide</a></li>
+              <li><a class="dropdown-item py-2" href="places.html">Nearby Places</a></li>
+              <!-- <li><hr class="dropdown-divider"/></li> -->
+          </ul>
+      </div>
+  </div>
+
+  <!-- ── Hero Banner ── -->
+  <div class="places-hero">
+    <div>
+      <h1 class="display-5 fw-bold mb-2">Discover Places Near You</h1>
+      <p class="lead mb-0">Let us find the best tourist spots in your district</p>
+    </div>
+  </div>
+
+  <!-- ── Location Detection Card ── -->
+  <div class="container">
+    <div class="location-card mb-5">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">Your Location</label>
+          <div class="input-group">
+            <span class="input-group-text">📍</span>
+            <input type="text" id="locationInput" class="form-control form-control-lg"
+              placeholder="e.g. Tangail, Sylhet, Cox's Bazar…"
+              list="locationSuggestions" autocomplete="off" />
+            <datalist id="locationSuggestions"></datalist>
+          </div>
+          <small id="detectedNote" class="text-muted mt-1 d-block d-none">
+            📍 Detected: <strong id="detectedName" class="text-success"></strong>
+            <span class="ms-2">Wrong district?
+              <button type="button" class="btn btn-link btn-sm p-0 align-baseline"
+                      style="font-size:inherit;" onclick="toggleDistrictPicker()">Choose manually</button>
+            </span>
+          </small>
+          <small id="coordNote" class="text-muted mt-1 d-block d-none" style="font-size:0.78rem;">
+            🛜 Browser coordinates: <span id="coordDisplay"></span>
+            &nbsp;—&nbsp;<a id="coordMapLink" href="#" target="_blank" rel="noopener" style="font-size:inherit;">Verify on map ↗</a>
+          </small>
+          <div id="districtPickerRow" class="mt-2 d-none">
+            <select id="districtSelect" class="form-select form-select-sm"
+                    style="max-width:260px;" onchange="selectDistrict(this.value)">
+              <option value="">— Select your district —</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <button id="btnDetect" class="btn btn-outline-primary btn-lg w-100 btn-detect"
+            onclick="detectLocation()">
+            🛰️ Detect My Location
+          </button>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary btn-lg w-100" onclick="searchByInput()">
+            🔍 Search
+          </button>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-secondary btn-lg w-100" onclick="clearResults()">
+            ✕ Clear
+          </button>
+        </div>
+      </div>
+      <!-- Error / info messages -->
+      <div id="alertBox" class="alert mt-3 d-none" role="alert"></div>
+    </div>
+
+    <!-- ── Results Header ── -->
+    <div id="resultsHeader" class="d-none mb-4">
+      <!-- Search and Sort Bar -->
+      <div class="mb-3 p-3 bg-light rounded-3">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small mb-1">Search in Results</label>
+            <div class="input-group">
+              <span class="input-group-text">🔍</span>
+              <input type="text" id="searchQuery" class="form-control" 
+                placeholder="Search by name, highlights, or description..."
+                onkeyup="handleSearchAndSort()" />
+              <button class="btn btn-outline-secondary" onclick="clearSearchQuery()">✕</button>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small mb-1">Sort By</label>
+            <select id="sortBy" class="form-select" onchange="handleSearchAndSort()">
+              <option value="rating">⭐ Rating (High to Low)</option>
+              <option value="name">🔤 Name (A-Z)</option>
+              <option value="category">📂 Category</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small mb-1">View</label>
+            <div class="btn-group w-100" role="group">
+              <button type="button" class="btn btn-outline-primary active" id="btnGridView" onclick="setViewMode('grid')">
+                <span>⊞</span> Grid
+              </button>
+              <button type="button" class="btn btn-outline-primary" id="btnListView" onclick="setViewMode('list')">
+                <span>☰</span> List
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+          <h3 class="mb-0">Places in <span id="locationLabel" class="text-primary"></span></h3>
+          <p class="text-muted mb-0" id="resultCount"></p>
+        </div>
+        <!-- Category filter pills -->
+        <div id="categoryFilters" class="d-flex flex-wrap gap-2"></div>
+      </div>
+      <hr/>
+    </div>
+
+    <!-- ── Place Cards Grid ── -->
+    <div id="placesGrid" class="row g-4 mb-5"></div>
+
+    <!-- ── Empty State ── -->
+    <div id="emptyState" class="empty-state d-none">
+      <div class="icon">🗺️</div>
+      <h4>No places found for this location</h4>
+      <p class="text-muted">Try a different district or city name, or use "Detect My Location".</p>
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer class="footer bg-dark text-light py-4">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6 text-center text-md-start">
+          <p class="text-muted small mb-0">&copy; 2026 Explore Bangladesh. All rights reserved.</p>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <p class="text-muted small mb-0">Made with <span class="text-danger">&hearts;</span> in Bangladesh</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+    crossorigin="anonymous"></script>
+  <script src="./js/navbar.js"></script>
+  <script src="./script.js"></script>
+  <script>
+    const API_BASE = '/api/places';
+    let allPlaces = [];
+    let activeCategory = 'All';
+    let currentLocation = '';
+    let viewMode = 'grid'; // 'grid' or 'list'
+
+    // ── Load supported location suggestions on page load ──────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch(`${API_BASE}/locations`);
+        if (res.ok) {
+          const locations = await res.json();
+          const datalist = document.getElementById('locationSuggestions');
+          const districtSelect = document.getElementById('districtSelect');
+          locations.forEach(loc => {
+            const opt = document.createElement('option');
+            opt.value = loc;
+            datalist.appendChild(opt);
+            // also populate the manual correction picker
+            const selOpt = document.createElement('option');
+            selOpt.value = loc;
+            selOpt.textContent = loc;
+            districtSelect.appendChild(selOpt);
+          });
+        }
+      } catch (_) { /* silently fail */ }
+
+      // Auto-detect on page load if URL has ?location= param
+      const params = new URLSearchParams(window.location.search);
+      const locParam = params.get('location');
+      if (locParam) {
+        document.getElementById('locationInput').value = locParam;
+        fetchPlaces(locParam);
+      }
+    });
+
+    // ── Browser geolocation → reverse geocode → fetch places ─────────────
+    function detectLocation() {
+      if (!navigator.geolocation) {
+        showAlert('warning', 'Your browser does not support geolocation. Please type your location manually.');
+        return;
+      }
+
+      const btn = document.getElementById('btnDetect');
+      btn.classList.add('detecting');
+      btn.disabled = true;
+      document.getElementById('loadingOverlay').classList.add('active');
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          // Show the raw coordinates so the user can verify if the browser got the right location
+          const coordEl = document.getElementById('coordDisplay');
+          const mapLink  = document.getElementById('coordMapLink');
+          coordEl.textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}  (±${Math.round(accuracy)} m)`;
+          mapLink.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          document.getElementById('coordNote').classList.remove('d-none');
+
+          // Improved accuracy handling for mobile data users
+          if (accuracy > 10000) {
+            showAlert('info',
+              `📡 Using mobile network location (±${Math.round(accuracy / 1000)} km). Location may be approximate. If detected district is wrong, please select manually below.`);
+          } else if (accuracy > 5000) {
+            showAlert('info',
+              `📶 Using WiFi/cell tower triangulation (±${Math.round(accuracy / 1000)} km accuracy). Check detected location and correct if needed.`);
+          } else if (accuracy > 1000) {
+            showAlert('success',
+              `✓ Good location accuracy (±${Math.round(accuracy)} m). Detecting your upazila...`);
+          }
+
+          try {
+            // Use multiple zoom levels to get the most accurate upazila and district
+            // zoom=10 gives upazila-level precision for better matching
+            const nominatimUrl =
+              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10&addressdetails=1&accept-language=en`;
+            const geoRes = await fetch(nominatimUrl);
+            const geoData = await geoRes.json();
+            const addr = geoData.address || {};
+
+            console.log('Nominatim response:', addr); // Debug log
+
+            // Extract upazila with better fallback handling
+            const rawUpazila = addr.county || addr.municipality || addr.city_district || addr.city || '';
+            const upazila = rawUpazila
+              .replace(/\s*(District|Zila|Upazila|Upazilla|Thana|Division|Sadar|Municipality)\b/gi, '')
+              .trim();
+
+            // Extract district - try multiple fields for better accuracy
+            const rawDistrict = addr.state_district || addr.state || addr.city || addr.town || 
+                               (addr.county && !addr.state_district ? addr.county : '') || 'Dhaka';
+            const district = rawDistrict
+              .replace(/\s*(District|Zila|Division|Sadar)\b/gi, '')
+              .trim();
+
+            // Create display label showing both upazila and district for clarity
+            let displayLabel = district;
+            if (upazila && upazila !== district) {
+              displayLabel = `${upazila} → ${district} District`;
+            }
+
+            // Additional context from full address for user verification
+            const fullDisplay = geoData.display_name || displayLabel;
+            
+            document.getElementById('locationInput').value = district;
+            document.getElementById('detectedName').innerHTML = 
+              `<strong>${displayLabel}</strong><br><small class="text-muted" style="font-size:0.85em;">${fullDisplay}</small>`;
+            document.getElementById('detectedNote').classList.remove('d-none');
+            document.getElementById('districtPickerRow').classList.add('d-none');
+            document.getElementById('districtSelect').value = '';
+            
+            // Show upazila info if available
+            if (upazila && upazila !== district) {
+              showAlert('success', 
+                `✓ Your upazila: ${upazila}. Showing places in ${district} District. District correct?`);
+            }
+            
+            fetchPlaces(district);
+          } catch (err) {
+            console.error('Geocoding error:', err);
+            showAlert('warning', 'Could not resolve your coordinates to a location. Your device may be using approximate cell tower location. Please select your district manually below.');
+            document.getElementById('districtPickerRow').classList.remove('d-none');
+          } finally {
+            resetDetectButton();
+          }
+        },
+        (err) => {
+          let msg = 'Could not detect your location.';
+          if (err.code === err.PERMISSION_DENIED) {
+            msg = '🚫 Location permission denied. Please allow location access in browser settings, or type your location manually.';
+          } else if (err.code === err.POSITION_UNAVAILABLE) {
+            msg = '📵 Location unavailable. Your device may not have GPS/network connection. Please select your district manually.';
+          } else if (err.code === err.TIMEOUT) {
+            msg = '⏱️ Location request timed out. Try again or select your district manually.';
+          }
+          showAlert('warning', msg);
+          document.getElementById('districtPickerRow').classList.remove('d-none');
+          resetDetectButton();
+        },
+        { 
+          timeout: 20000,  // Increased timeout for mobile data users
+          enableHighAccuracy: false,  // Use network-based location (faster on mobile data)
+          maximumAge: 300000  // Accept cached location up to 5 minutes old
+        }
+      );
+    }
+
+    function toggleDistrictPicker() {
+      const row = document.getElementById('districtPickerRow');
+      row.classList.toggle('d-none');
+    }
+
+    function selectDistrict(val) {
+      if (!val) return;
+      document.getElementById('locationInput').value = val;
+      document.getElementById('detectedName').textContent = val;
+      document.getElementById('districtPickerRow').classList.add('d-none');
+      document.getElementById('districtSelect').value = '';
+      fetchPlaces(val);
+    }
+
+    function resetDetectButton() {
+      const btn = document.getElementById('btnDetect');
+      btn.classList.remove('detecting');
+      btn.disabled = false;
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // ── Manual search ─────────────────────────────────────────────────────
+    function searchByInput() {
+      const loc = document.getElementById('locationInput').value.trim();
+      if (!loc) {
+        showAlert('warning', 'Please enter a location name.');
+        return;
+      }
+      document.getElementById('detectedNote').classList.add('d-none');
+      fetchPlaces(loc);
+    }
+
+    // Allow pressing Enter to search
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('locationInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') searchByInput();
+      });
+    });
+
+    // ── Handle search and sort ────────────────────────────────────────────
+    function handleSearchAndSort() {
+      if (!currentLocation) return;
+      fetchPlaces(currentLocation);
+    }
+
+    function clearSearchQuery() {
+      document.getElementById('searchQuery').value = '';
+      handleSearchAndSort();
+    }
+
+    function setViewMode(mode) {
+      viewMode = mode;
+      document.getElementById('btnGridView').classList.toggle('active', mode === 'grid');
+      document.getElementById('btnListView').classList.toggle('active', mode === 'list');
+      if (allPlaces.length > 0) {
+        renderCards(allPlaces);
+      }
+    }
+
+    // ── API call ──────────────────────────────────────────────────────────
+    async function fetchPlaces(location) {
+      hideAlert();
+      document.getElementById('placesGrid').innerHTML = '';
+      document.getElementById('emptyState').classList.add('d-none');
+      document.getElementById('resultsHeader').classList.add('d-none');
+      
+      currentLocation = location;
+      const sortBy = document.getElementById('sortBy') ? document.getElementById('sortBy').value : '';
+      const searchQuery = document.getElementById('searchQuery') ? document.getElementById('searchQuery').value : '';
+
+      try {
+        let url = `${API_BASE}/nearby?location=${encodeURIComponent(location)}`;
+        if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
+        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+        
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        allPlaces = data.places || [];
+        activeCategory = 'All';
+        renderResults(data.location, allPlaces);
+      } catch (err) {
+        showAlert('danger', 'Failed to load recommendations. Please try again.');
+      }
+    }
+
+    // ── Render results ────────────────────────────────────────────────────
+    function renderResults(location, places) {
+      document.getElementById('locationLabel').textContent = location;
+      document.getElementById('resultsHeader').classList.remove('d-none');
+
+      if (!places || places.length === 0) {
+        document.getElementById('resultCount').textContent = '0 places found';
+        document.getElementById('emptyState').classList.remove('d-none');
+        buildCategoryFilters([]);
+        return;
+      }
+
+      document.getElementById('resultCount').textContent =
+        `${places.length} amazing place${places.length > 1 ? 's' : ''} to visit`;
+
+      buildCategoryFilters(places);
+      renderCards(places);
+    }
+
+    function buildCategoryFilters(places) {
+      const container = document.getElementById('categoryFilters');
+      container.innerHTML = '';
+      if (places.length === 0) return;
+
+      const categories = ['All', ...new Set(places.map(p => p.category))];
+      categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `btn btn-sm ${cat === activeCategory ? 'btn-primary' : 'btn-outline-secondary'}`;
+        btn.textContent = cat;
+        btn.style.borderRadius = '20px';
+        btn.onclick = () => {
+          activeCategory = cat;
+          const filtered = cat === 'All' ? allPlaces : allPlaces.filter(p => p.category === cat);
+          buildCategoryFilters(allPlaces); // re-render filters
+          renderCards(filtered);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function renderCards(places) {
+      const grid = document.getElementById('placesGrid');
+      grid.innerHTML = '';
+      
+      const isListView = viewMode === 'list';
+
+      places.forEach(place => {
+        const stars = renderStars(place.rating);
+        const highlights = (place.highlights || [])
+          .map(h => `<span class="highlight-pill">${h}</span>`).join('');
+        const catClass = `category-${place.category}`;
+        
+        // Additional info if available
+        const additionalInfo = [];
+        if (place.entranceFee) additionalInfo.push(`💵 ${place.entranceFee}`);
+        if (place.bestTimeToVisit) additionalInfo.push(`📅 Best: ${place.bestTimeToVisit}`);
+        if (place.estimatedDuration) additionalInfo.push(`⏱️ ${place.estimatedDuration} min`);
+        const infoHtml = additionalInfo.length > 0 
+          ? `<p class="small text-muted mb-2" style="line-height:1.6">${additionalInfo.join(' • ')}</p>` 
+          : '';
+
+        // New: Travel details section with interactive tabs (using simple toggle)
+        const upazilaBadge = place.upazila ? `<span class="badge bg-info text-dark me-2">📍 ${escapeHtml(place.upazila)} Upazila</span>` : '';
+        
+        const travelDetailsHtml = `
+          <div class="mt-3 border-top pt-2">
+            <button class="btn btn-sm btn-outline-primary w-100" type="button" 
+                    onclick="toggleTravelDetails('${place.id}'); return false;">
+              ℹ️ View Travel Details
+            </button>
+            <div id="details-${place.id}" style="display: none;" class="mt-2">
+              <!-- Travel Options Buttons -->
+              <div class="btn-group w-100 mb-2" role="group" style="flex-wrap: wrap;">
+                <button type="button" class="btn btn-sm btn-outline-primary" 
+                        onclick="showTravelDetail('${place.id}', 'howto'); return false;">
+                  🚗 How to Go
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success" 
+                        onclick="showTravelDetail('${place.id}', 'hotels'); return false;">
+                  🏨 Hotels
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning" 
+                        onclick="showTravelDetail('${place.id}', 'cars'); return false;">
+                  🚙 Cars
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info" 
+                        onclick="showTravelDetail('${place.id}', 'guides'); return false;">
+                  👤 Guides
+                </button>
+              </div>
+              
+              <!-- Content Area for Each Option -->
+              <div class="card card-body bg-light small" style="font-size:0.85rem; min-height: 80px;">
+                <!-- How to Go -->
+                <div id="howto-${place.id}" class="travel-detail-content" style="display: none;">
+                  <strong class="text-primary d-block mb-2">🚗 How to Go:</strong>
+                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.howToGo || 'Transportation information not available. Please check Google Maps for directions.')}</p>
+                </div>
+                
+                <!-- Hotels -->
+                <div id="hotels-${place.id}" class="travel-detail-content" style="display: none;">
+                  <strong class="text-success d-block mb-2">🏨 Hotels & Accommodations:</strong>
+                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.nearbyHotels || 'No hotel information available. Use our Hotels page to search for accommodations.')}</p>
+                </div>
+                
+                <!-- Cars -->
+                <div id="cars-${place.id}" class="travel-detail-content" style="display: none;">
+                  <strong class="text-warning d-block mb-2">🚙 Car Rentals:</strong>
+                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.nearbyCarRentals || 'No car rental information available. Book through our Cars page or contact local agencies.')}</p>
+                </div>
+                
+                <!-- Guides -->
+                <div id="guides-${place.id}" class="travel-detail-content" style="display: none;">
+                  <strong class="text-info d-block mb-2">👤 Tour Guides:</strong>
+                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.availableGuides || 'No tour guides available at this location. Contact local tourism office or book through our Travel Guide page.')}</p>
+                </div>
+                
+                <!-- Initial Message -->
+                <div id="initial-${place.id}" class="text-center text-muted py-3">
+                  <p class="mb-0">👆 Click a button above to view specific travel information</p>
+                </div>
+              </div>
+            </div>
+          </div>`;
+
+        const col = document.createElement('div');
+        col.className = isListView ? 'col-12' : 'col-sm-6 col-lg-4';
+        
+        if (isListView) {
+          col.innerHTML = `
+            <div class="place-card card mb-3">
+              <div class="row g-0">
+                <div class="col-md-4">
+                  <img src="${escapeHtml(place.imageUrl)}"
+                       class="img-fluid h-100 w-100"
+                       style="object-fit: cover; min-height: 250px;"
+                       alt="${escapeHtml(place.name)}"
+                       onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'">
+                </div>
+                <div class="col-md-8">
+                  <div class="place-card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <span class="place-category-badge ${catClass}">${escapeHtml(place.category)}</span>
+                        ${upazilaBadge}
+                      </div>
+                      <div class="star-rating">${stars}<span> ${place.rating.toFixed(1)}</span></div>
+                    </div>
+                    <h5 class="fw-bold mb-1">${escapeHtml(place.name)}</h5>
+                    <p class="distance-note mb-2">${escapeHtml(place.distanceNote)}</p>
+                    <p class="text-muted small mb-2" style="line-height:1.5">${escapeHtml(place.description)}</p>
+                    ${infoHtml}
+                    <div class="mb-2">${highlights}</div>
+                    ${travelDetailsHtml}
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        } else {
+          col.innerHTML = `
+            <div class="place-card card">
+              <img src="${escapeHtml(place.imageUrl)}"
+                   class="place-card-img"
+                   alt="${escapeHtml(place.name)}"
+                   onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'">
+              <div class="place-card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <span class="place-category-badge ${catClass}">${escapeHtml(place.category)}</span>
+                  <div class="star-rating">${stars}<span> ${place.rating.toFixed(1)}</span></div>
+                </div>
+                ${upazilaBadge}
+                <h5 class="fw-bold mb-1">${escapeHtml(place.name)}</h5>
+                <p class="distance-note mb-2">${escapeHtml(place.distanceNote)}</p>
+                <p class="text-muted small mb-2" style="line-height:1.5">${escapeHtml(place.description)}</p>
+                ${infoHtml}
+                <div class="mb-2">${highlights}</div>
+                ${travelDetailsHtml}
+              </div>
+            </div>`;
+        }
+        grid.appendChild(col);
+      });
+    }
+
+    function renderStars(rating) {
+      const full  = Math.floor(rating);
+      const half  = rating - full >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+    function showAlert(type, message) {
+      const box = document.getElementById('alertBox');
+      box.className = `alert alert-${type} mt-3`;
+      box.textContent = message;
+      box.classList.remove('d-none');
+    }
+    function hideAlert() {
+      document.getElementById('alertBox').classList.add('d-none');
+    }
+    function clearResults() {
+      document.getElementById('locationInput').value = '';
+      document.getElementById('placesGrid').innerHTML = '';
+      document.getElementById('resultsHeader').classList.add('d-none');
+      document.getElementById('emptyState').classList.add('d-none');
+      document.getElementById('detectedNote').classList.add('d-none');
+      document.getElementById('coordNote').classList.add('d-none');
+      document.getElementById('districtPickerRow').classList.add('d-none');
+      document.getElementById('districtSelect').value = '';
+      if (document.getElementById('searchQuery')) document.getElementById('searchQuery').value = '';
+      if (document.getElementById('sortBy')) document.getElementById('sortBy').value = 'rating';
+      hideAlert();
+      allPlaces = [];
+      currentLocation = '';
+    }
+
+    // ── Travel Details Tab Functions ──────────────────────────────────────
+    function toggleTravelDetails(placeId) {
+      console.log(`Toggling travel details for: ${placeId}`);
+      const detailsDiv = document.getElementById(`details-${placeId}`);
+      if (!detailsDiv) {
+        console.error(`Details div not found: details-${placeId}`);
+        return;
+      }
+      
+      if (detailsDiv.style.display === 'none' || detailsDiv.style.display === '') {
+        detailsDiv.style.display = 'block';
+        console.log(`Travel details opened for: ${placeId}`);
+      } else {
+        detailsDiv.style.display = 'none';
+        console.log(`Travel details closed for: ${placeId}`);
+      }
+    }
+
+    function showTravelDetail(placeId, type) {
+      console.log('Showing travel detail:', type, 'for place:', placeId);
+      
+      // Hide all travel detail contents for this place
+      const detailsContainer = document.getElementById(`details-${placeId}`);
+      if (!detailsContainer) {
+        console.error('Details container not found for:', placeId);
+        return;
+      }
+      
+      const allContents = detailsContainer.querySelectorAll('.travel-detail-content');
+      allContents.forEach(content => {
+        content.style.display = 'none';
+      });
+      
+      // Hide initial message
+      const initialMsg = document.getElementById(`initial-${placeId}`);
+      if (initialMsg) initialMsg.style.display = 'none';
+      
+      // Show the selected content
+      const selectedContent = document.getElementById(`${type}-${placeId}`);
+      if (selectedContent) {
+        selectedContent.style.display = 'block';
+        // Add a subtle animation
+        selectedContent.style.animation = 'fadeIn 0.3s ease-in';
+        console.log('Content shown successfully');
+      } else {
+        console.error('Content not found:', `${type}-${placeId}`);
+      }
+    }
+  </script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</body>
+</html>
