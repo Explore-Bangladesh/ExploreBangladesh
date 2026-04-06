@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "itinerary_days")
+@Table(name = "itinerary_days_legacy")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

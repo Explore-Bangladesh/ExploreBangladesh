@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "itinerary_activities")
+@Table(name = "itinerary_activities_legacy")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -35,7 +35,7 @@ public class ItineraryActivityEntity {
     private String description;
 
     /** TRAVEL, FOOD, SIGHTSEEING, REST, ACTIVITY */
-    @Column(nullable = false)
+    @Column(name = "activity_type", nullable = false)
     private String activityType;
 
     private String location;
