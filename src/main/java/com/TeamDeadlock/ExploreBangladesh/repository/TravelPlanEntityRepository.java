@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface TravelPlanRepository extends JpaRepository<TravelPlanEntity, String> {
+public interface TravelPlanEntityRepository extends JpaRepository<TravelPlanEntity, String> {
 
     List<TravelPlanEntity> findByBudgetTierIgnoreCase(String budgetTier);
 

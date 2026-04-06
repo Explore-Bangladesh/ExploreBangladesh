@@ -14,11 +14,11 @@ import java.util.List;
 @Order(2)
 public class TravelPlanDataInitializer implements ApplicationRunner {
 
-    private final TravelPlanRepository planRepo;
+    private final TravelPlanEntityRepository planRepo;
     private final ItineraryDayRepository dayRepo;
     private final CostBreakdownRepository costRepo;
 
-    public TravelPlanDataInitializer(TravelPlanRepository planRepo,
+    public TravelPlanDataInitializer(TravelPlanEntityRepository planRepo,
                                       ItineraryDayRepository dayRepo,
                                       CostBreakdownRepository costRepo) {
         this.planRepo = planRepo;

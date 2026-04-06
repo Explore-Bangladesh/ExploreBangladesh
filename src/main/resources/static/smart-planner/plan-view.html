@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Plan - Smart Trip Planner</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="css/smart-planner.css">
+    <link rel="stylesheet" href="css/itinerary.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navbar"></nav>
+
+    <!-- Main Content -->
+    <div class="container-main" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <!-- Plan Header -->
+        <div id="planHeader" class="plan-header">
+            <!-- Content will be inserted by JavaScript -->
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Left: Itinerary Timeline -->
+            <div class="itinerary-section">
+                <div id="itineraryTimeline" class="itinerary-timeline">
+                    <!-- Daily itineraries will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Budget & Insights -->
+            <aside class="sidebar">
+                <!-- Budget Card -->
+                <div id="budgetCard" class="card">
+                    <h3>💰 Budget Breakdown</h3>
+                    <div id="budgetDetails"></div>
+                </div>
+
+                <!-- Destination Info Card -->
+                <div id="destinationCard" class="card" style="display: none;">
+                    <h3>📍 Destination Info</h3>
+                    <div id="destinationDetails"></div>
+                </div>
+
+                <!-- Insights Card -->
+                <div id="insightsCard" class="card">
+                    <h3>💡 Travel Tips & Insights</h3>
+                    <div id="insights"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="editPlanBtn" class="btn btn-secondary">✏️ Edit Plan</button>
+                    <button id="deletePlanBtn" class="btn btn-danger">🗑️ Delete Plan</button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-container" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading your plan...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-container" style="display: none;">
+            <h3>❌ Error Loading Plan</h3>
+            <p id="errorMessage"></p>
+            <a href="my-trips.html" class="btn btn-primary">Back to My Trips</a>
+        </div>
+    </div>
+
+    <script src="js/plan-view.js"></script>
+</body>
+</html>

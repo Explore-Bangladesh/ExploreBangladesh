@@ -5,7 +5,7 @@ import com.TeamDeadlock.ExploreBangladesh.entity.ItineraryDayEntity;
 import com.TeamDeadlock.ExploreBangladesh.entity.TravelPlanEntity;
 import com.TeamDeadlock.ExploreBangladesh.repository.CostBreakdownRepository;
 import com.TeamDeadlock.ExploreBangladesh.repository.ItineraryDayRepository;
-import com.TeamDeadlock.ExploreBangladesh.repository.TravelPlanRepository;
+import com.TeamDeadlock.ExploreBangladesh.repository.TravelPlanEntityRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -14,11 +14,11 @@ import java.util.stream.Collectors;
 @Service
 public class TravelPlanService {
 
-    private final TravelPlanRepository planRepository;
+    private final TravelPlanEntityRepository planRepository;
     private final ItineraryDayRepository dayRepository;
     private final CostBreakdownRepository costRepository;
 
-    public TravelPlanService(TravelPlanRepository planRepository,
+    public TravelPlanService(TravelPlanEntityRepository planRepository,
                              ItineraryDayRepository dayRepository,
                              CostBreakdownRepository costRepository) {
         this.planRepository = planRepository;

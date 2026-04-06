@@ -1,0 +1,598 @@
+package com.TeamDeadlock.ExploreBangladesh.planner.controller;
+
+import com.TeamDeadlock.ExploreBangladesh.planner.dto.*;
+import com.TeamDeadlock.ExploreBangladesh.planner.entity.TravelPlan;
+import com.TeamDeadlock.ExploreBangladesh.planner.repository.*;
+import com.TeamDeadlock.ExploreBangladesh.auth.repository.UserRepository;
+import com.TeamDeadlock.ExploreBangladesh.planner.service.impl.SmartPlannerServiceImplV2;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Phase 2: Intelligent Itinerary Generation API
+ * Provides endpoints for attractions, hotels, restaurants, and detailed planning
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/planner")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*", maxAge = 3600)
+public class SmartPlannerPhase2Controller {
+
+    private final ObjectMapper objectMapper;
+    private final AttractionRepository attractionRepository;
+    private final HotelRepository hotelRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final TransportRouteRepository transportRouteRepository;
+    private final ActivityRecommendationRepository activityRecommendationRepository;
+    private final TravelPlanRepository travelPlanRepository;
+    private final SmartPlannerServiceImplV2 smartPlannerServiceV2;
+    private final UserRepository userRepository;
+
+    /**
+     * Generate intelligent travel plan PREVIEW (WITHOUT saving to database)
+     * User can review before clicking "Save Plan" button
+     * POST /api/planner/v2/generate
+     * Note: Anonymous users (not logged in) can also generate previews
+     */
+    @PostMapping("/v2/generate")
+    public ResponseEntity<?> generateSmartPlanV2(
+            @Valid @RequestBody SmartPlanRequest request,
+            Authentication authentication) {
+        try {
+            // Extract user ID from authentication (null for anonymous users)
+            String userId = extractUserIdFromAuthentication(authentication);
+            
+            // Allow anonymous users - they can preview but cannot save
+            if (userId != null) {
+                log.info("🚀 [PLAN PREVIEW] User {} requesting Phase 2 smart plan for: {} (NOT SAVING YET)", userId, request.getDestination());
+            } else {
+                log.info("🚀 [PLAN PREVIEW - ANONYMOUS] Generating Phase 2 smart plan for: {} (NOT SAVING YET)", request.getDestination());
+            }
+            
+            log.info("📋 Request details - Duration: {} days, Budget: {}, Style: {}", 
+                request.getDurationDays(), request.getBudgetTier(), request.getTravelStyle());
+
+            // Generate preview WITHOUT saving to database
+            EnhancedTravelPlanDTO plan = smartPlannerServiceV2.generateSmartPlanPreview(request, userId);
+
+            log.info("Plan preview ready - waiting for Save Plan button click");
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                200,
+                "Plan generated successfully. Click 'Save Plan' to save it to My Trips",
+                plan
+            ));
+        } catch (Exception e) {
+            log.error("Error generating Phase 2 smart plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                500,
+                "Failed to generate plan: " + e.getMessage(),
+                null
+            ));
+        }
+    }
+
+    /**
+     * Save generated plan to database
+     * Called when user clicks "Save Plan" button
+     * POST /api/planner/v2/save
+     */
+    @PostMapping("/v2/save")
+    public ResponseEntity<?> savePlanV2(
+            @Valid @RequestBody SmartPlanRequest request,
+            Authentication authentication) {
+        try {
+            // Extract actual user ID from authentication
+            String userId = extractUserIdFromAuthentication(authentication);
+            
+            if (userId == null || userId.isEmpty()) {
+                log.warn("❌ Could not extract user ID from authentication");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(
+                    401,
+                    "Unauthorized: Could not identify user",
+                    null
+                ));
+            }
+            
+            log.info("💾 [SAVE PLAN] User {} saving Phase 2 smart plan: {}", userId, request.getDestination());
+
+            // Save plan to database
+            EnhancedTravelPlanDTO plan = smartPlannerServiceV2.savePlanToDB(request, userId);
+
+            log.info("Plan ID: {} has been saved to database. User: {}", plan.getId(), userId);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(
+                201,
+                "Plan saved successfully and added to My Trips",
+                plan
+            ));
+        } catch (Exception e) {
+            log.error("Error saving Phase 2 smart plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                500,
+                "Failed to save plan: " + e.getMessage(),
+                null
+            ));
+        }
+    }
+
+    /**
+     * Get Phase 2 intelligent travel plan by ID
+     * GET /api/planner/v2/{planId}
+     * Regenerates full plan data from saved metadata
+     */
+    @GetMapping("/v2/{planId}")
+    public ResponseEntity<?> getTravelPlanV2(
+            @PathVariable Long planId,
+            Authentication authentication) {
+        try {
+            String userId = extractUserIdFromAuthentication(authentication);
+            
+            if (userId == null || userId.isEmpty()) {
+                log.warn("❌ Could not extract user ID from authentication");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(
+                    401,
+                    "Unauthorized: Could not identify user",
+                    null
+                ));
+            }
+
+            log.info("User {} retrieving travel plan: {}", userId, planId);
+
+            var travelPlan = travelPlanRepository.findById(planId);
+            if (travelPlan.isEmpty() || !travelPlan.get().getUserId().equals(userId)) {
+                log.warn("Travel plan {} not found or unauthorized access", planId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
+                    404,
+                    "Travel plan not found",
+                    null
+                ));
+            }
+
+            // IMPORTANT: Do NOT regenerate! Just retrieve the existing plan from database
+            // If we call generateSmartPlanV2 again, it will create a DUPLICATE entry!
+            log.info("⚠️ Retrieving saved plan from database (NOT regenerating)");
+            
+            // Return the saved plan data
+            TravelPlan savedPlan = travelPlan.get();
+            if (savedPlan.getPlanData() == null || savedPlan.getPlanData().isEmpty()) {
+                log.warn("⚠️ Plan saved but plan_data is empty, falling back to regeneration");
+                // Fallback: regenerate if data is missing
+                EnhancedTravelPlanDTO planDTO = smartPlannerServiceV2.regeneratePlanDisplay(savedPlan, userId);
+                return ResponseEntity.ok(new ApiResponse<>(
+                    200,
+                    "Travel plan retrieved successfully",
+                    planDTO
+                ));
+            }
+
+            try {
+                // Deserialize the saved plan from JSON
+                EnhancedTravelPlanDTO planDTO = objectMapper.readValue(
+                    savedPlan.getPlanData(),
+                    EnhancedTravelPlanDTO.class
+                );
+                
+                log.info("📋 Successfully retrieved saved plan {}", planId);
+                return ResponseEntity.ok(new ApiResponse<>(
+                    200,
+                    "Travel plan retrieved successfully",
+                    planDTO
+                ));
+            } catch (Exception e) {
+                log.error("Failed to deserialize saved plan, attempting regeneration", e);
+                // Fallback: regenerate if deserialization fails
+                EnhancedTravelPlanDTO planDTO = smartPlannerServiceV2.regeneratePlanDisplay(savedPlan, userId);
+                return ResponseEntity.ok(new ApiResponse<>(
+                    200,
+                    "Travel plan retrieved successfully",
+                    planDTO
+                ));
+            }
+        } catch (Exception e) {
+            log.error("Error retrieving travel plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                500,
+                "Failed to retrieve plan: " + e.getMessage(),
+                null
+            ));
+        }
+    }
+
+    /**
+     * Get attractions for a specific destination
+     */
+    @GetMapping("/attractions/{destinationId}")
+    public ResponseEntity<ApiResponse<List<AttractionDTO>>> getAttractions(
+            @PathVariable Long destinationId) {
+
+        log.info("Fetching attractions for destination: {}", destinationId);
+
+        List<AttractionDTO> attractions = attractionRepository.findByDestinationId(destinationId)
+            .stream()
+            .map(this::convertToAttractionDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Attractions retrieved successfully",
+            attractions
+        ));
+    }
+
+    /**
+     * Get attractions by travel style
+     */
+    @GetMapping("/attractions/{destinationId}/style/{travelStyle}")
+    public ResponseEntity<ApiResponse<List<AttractionDTO>>> getAttractionsByStyle(
+            @PathVariable Long destinationId,
+            @PathVariable String travelStyle) {
+
+        log.info("Fetching {} attractions for destination: {}", travelStyle, destinationId);
+
+        List<AttractionDTO> attractions = attractionRepository
+            .findByDestinationIdAndTravelStyle(destinationId, travelStyle)
+            .stream()
+            .map(this::convertToAttractionDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Attractions filtered by travel style",
+            attractions
+        ));
+    }
+
+    /**
+     * Get hotels for a destination
+     */
+    @GetMapping("/hotels/{destinationId}")
+    public ResponseEntity<ApiResponse<List<HotelDTO>>> getHotels(
+            @PathVariable Long destinationId) {
+
+        log.info("Fetching hotels for destination: {}", destinationId);
+
+        List<HotelDTO> hotels = hotelRepository.findByDestinationId(destinationId)
+            .stream()
+            .map(this::convertToHotelDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Hotels retrieved successfully",
+            hotels
+        ));
+    }
+
+    /**
+     * Get hotels by budget tier
+     */
+    @GetMapping("/hotels/{destinationId}/tier/{budgetTier}")
+    public ResponseEntity<ApiResponse<List<HotelDTO>>> getHotelsByBudget(
+            @PathVariable Long destinationId,
+            @PathVariable String budgetTier) {
+
+        log.info("Fetching {} tier hotels for destination: {}", budgetTier, destinationId);
+
+        List<HotelDTO> hotels;
+        if ("budget".equalsIgnoreCase(budgetTier)) {
+            hotels = hotelRepository.findHotelsByDestinationAndBudget(destinationId, 3000)
+                .stream()
+                .map(this::convertToHotelDTO)
+                .collect(Collectors.toList());
+        } else if ("luxury".equalsIgnoreCase(budgetTier)) {
+            hotels = hotelRepository.findTopHotelsByDestination(destinationId, 10)
+                .stream()
+                .map(this::convertToHotelDTO)
+                .collect(Collectors.toList());
+        } else {
+            hotels = hotelRepository.findTopHotelsByDestination(destinationId, 8)
+                .stream()
+                .map(this::convertToHotelDTO)
+                .collect(Collectors.toList());
+        }
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Hotels filtered by budget tier",
+            hotels
+        ));
+    }
+
+    /**
+     * Get restaurants for a destination
+     */
+    @GetMapping("/restaurants/{destinationId}")
+    public ResponseEntity<ApiResponse<List<RestaurantDTO>>> getRestaurants(
+            @PathVariable Long destinationId) {
+
+        log.info("Fetching restaurants for destination: {}", destinationId);
+
+        List<RestaurantDTO> restaurants = restaurantRepository.findByDestinationId(destinationId)
+            .stream()
+            .map(this::convertToRestaurantDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Restaurants retrieved successfully",
+            restaurants
+        ));
+    }
+
+    /**
+     * Get restaurants by cuisine type
+     */
+    @GetMapping("/restaurants/{destinationId}/cuisine/{cuisineType}")
+    public ResponseEntity<ApiResponse<List<RestaurantDTO>>> getRestaurantsByCuisine(
+            @PathVariable Long destinationId,
+            @PathVariable String cuisineType) {
+
+        log.info("Fetching {} restaurants for destination: {}", cuisineType, destinationId);
+
+        List<RestaurantDTO> restaurants = restaurantRepository
+            .findByDestinationIdAndCuisineType(destinationId, cuisineType)
+            .stream()
+            .map(this::convertToRestaurantDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Restaurants filtered by cuisine",
+            restaurants
+        ));
+    }
+
+    /**
+     * Get vegetarian restaurants
+     */
+    @GetMapping("/restaurants/{destinationId}/vegetarian")
+    public ResponseEntity<ApiResponse<List<RestaurantDTO>>> getVegetarianRestaurants(
+            @PathVariable Long destinationId) {
+
+        log.info("Fetching vegetarian restaurants for destination: {}", destinationId);
+
+        List<RestaurantDTO> restaurants = restaurantRepository
+            .findVegetarianRestaurantsByDestination(destinationId)
+            .stream()
+            .map(this::convertToRestaurantDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Vegetarian restaurants retrieved",
+            restaurants
+        ));
+    }
+
+    /**
+     * Get transport routes between destinations
+     */
+    @GetMapping("/transport/{sourceId}/{targetId}")
+    public ResponseEntity<ApiResponse<List<TransportRouteDTO>>> getTransportRoutes(
+            @PathVariable Long sourceId,
+            @PathVariable Long targetId) {
+
+        log.info("Fetching transport routes from {} to {}", sourceId, targetId);
+
+        List<TransportRouteDTO> routes = transportRouteRepository
+            .findRoutesBetweenDestinations(sourceId, targetId)
+            .stream()
+            .map(this::convertToTransportRouteDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Transport routes retrieved successfully",
+            routes
+        ));
+    }
+
+    /**
+     * Get cheapest transport route between destinations
+     */
+    @GetMapping("/transport/{sourceId}/{targetId}/cheapest")
+    public ResponseEntity<ApiResponse<TransportRouteDTO>> getCheapestRoute(
+            @PathVariable Long sourceId,
+            @PathVariable Long targetId) {
+
+        log.info("Fetching cheapest route from {} to {}", sourceId, targetId);
+
+        TransportRouteDTO route = transportRouteRepository
+            .findCheapestRoutes(sourceId, targetId)
+            .stream()
+            .findFirst()
+            .map(this::convertToTransportRouteDTO)
+            .orElse(null);
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Cheapest route retrieved",
+            route
+        ));
+    }
+
+    /**
+     * Get fastest transport route between destinations
+     */
+    @GetMapping("/transport/{sourceId}/{targetId}/fastest")
+    public ResponseEntity<ApiResponse<TransportRouteDTO>> getFastestRoute(
+            @PathVariable Long sourceId,
+            @PathVariable Long targetId) {
+
+        log.info("Fetching fastest route from {} to {}", sourceId, targetId);
+
+        TransportRouteDTO route = transportRouteRepository
+            .findFastestRoutes(sourceId, targetId)
+            .stream()
+            .findFirst()
+            .map(this::convertToTransportRouteDTO)
+            .orElse(null);
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Fastest route retrieved",
+            route
+        ));
+    }
+
+    /**
+     * Get activity recommendations for an attraction
+     */
+    @GetMapping("/activity-recommendations/{attractionId}")
+    public ResponseEntity<ApiResponse<List<ActivityRecommendationDTO>>> getActivityRecommendations(
+            @PathVariable Long attractionId) {
+
+        log.info("Fetching activity recommendations for attraction: {}", attractionId);
+
+        List<ActivityRecommendationDTO> recommendations = activityRecommendationRepository
+            .findByAttractionId(attractionId)
+            .stream()
+            .map(this::convertToActivityRecommendationDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Activity recommendations retrieved",
+            recommendations
+        ));
+    }
+
+    /**
+     * Get plan budget estimate
+     */
+    @GetMapping("/budget-estimate/{planId}")
+    public ResponseEntity<ApiResponse<BudgetBreakdownDto>> getBudgetEstimate(
+            @PathVariable Long planId) {
+
+        log.info("Fetching budget estimate for plan: {}", planId);
+
+        var plan = travelPlanRepository.findById(planId);
+        if (plan.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        BudgetBreakdownDto breakdown = new BudgetBreakdownDto();
+        long accommodationTotal = 6000L * plan.get().getDurationDays();
+        long foodTotal = 1200L * plan.get().getDurationDays();
+        long attractionTotal = 500L * (plan.get().getDurationDays() - 1);
+        long transportTotal = 500L;
+        long miscTotal = 300L;
+
+        breakdown.setAccommodation(new java.math.BigDecimal(accommodationTotal));
+        breakdown.setFood(new java.math.BigDecimal(foodTotal));
+        breakdown.setAttractions(new java.math.BigDecimal(attractionTotal));
+        breakdown.setTransport(new java.math.BigDecimal(transportTotal));
+        breakdown.setMiscellaneous(new java.math.BigDecimal(miscTotal));
+        breakdown.setTotal(new java.math.BigDecimal(
+            accommodationTotal + foodTotal + attractionTotal + transportTotal + miscTotal
+        ));
+
+        return ResponseEntity.ok(new ApiResponse<>(
+            200,
+            "Budget estimate retrieved",
+            breakdown
+        ));
+    }
+
+    // Helper conversion methods
+    
+    private AttractionDTO convertToAttractionDTO(com.TeamDeadlock.ExploreBangladesh.planner.entity.Attraction a) {
+        return new AttractionDTO(
+            a.getId(), a.getName(), a.getDescription(), a.getCategory(),
+            a.getLatitude(), a.getLongitude(), a.getEstimatedDurationHours(),
+            a.getEntryFeeBdt(), a.getBestTimeToVisit(), a.getRating(),
+            a.getTravelStyle(), a.getDifficultyLevel()
+        );
+    }
+
+    private HotelDTO convertToHotelDTO(com.TeamDeadlock.ExploreBangladesh.planner.entity.Hotel h) {
+        return new HotelDTO(
+            h.getId(), h.getName(), h.getDescription(), h.getAddress(),
+            h.getLatitude(), h.getLongitude(), h.getStarRating(),
+            h.getPhone(), h.getEmail(), h.getWebsite(),
+            h.getEconomyPriceBdt(), h.getMidrangePriceBdt(), h.getLuxuryPriceBdt(),
+            h.getAmenities(), h.getAverageRating(), h.getReviewCount()
+        );
+    }
+
+    private RestaurantDTO convertToRestaurantDTO(com.TeamDeadlock.ExploreBangladesh.planner.entity.Restaurant r) {
+        return new RestaurantDTO(
+            r.getId(), r.getName(), r.getDescription(), r.getCuisineType(),
+            r.getAddress(), r.getLatitude(), r.getLongitude(),
+            r.getPriceRange(), r.getAverageMealCostBdt(), r.getOperatingHours(),
+            r.getPhone(), r.getAverageRating(), r.getReviewCount(),
+            r.getSpecialties(), r.getVegetarianOptions()
+        );
+    }
+
+    private TransportRouteDTO convertToTransportRouteDTO(com.TeamDeadlock.ExploreBangladesh.planner.entity.TransportRoute t) {
+        return new TransportRouteDTO(
+            t.getId(), t.getSourceDestinationId(), t.getTargetDestinationId(),
+            t.getTransportType(), t.getDistanceKm(), t.getTravelTimeHours(),
+            t.getCostEconomyBdt(), t.getCostMidrangeBdt(), t.getCostLuxuryBdt(),
+            t.getNotes()
+        );
+    }
+
+    private ActivityRecommendationDTO convertToActivityRecommendationDTO(
+            com.TeamDeadlock.ExploreBangladesh.planner.entity.ActivityRecommendation ar) {
+        return new ActivityRecommendationDTO(
+            ar.getId(), ar.getAttractionId(), ar.getTravelStyle(),
+            ar.getDurationHours(), ar.getRecommendedTimeSlot(),
+            ar.getCostEstimationBdt(), ar.getSuitableForAgeGroup()
+        );
+    }
+
+
+    /**
+     * Helper method to extract user ID from authentication
+     * Extracts email from authentication principal and looks up user UUID
+     */
+    private String extractUserIdFromAuthentication(Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return null;
+            }
+            
+            // authentication.getName() returns the email (set by JwtAuthenticationFilter)
+            String email = authentication.getName();
+            if (email == null || email.isEmpty()) {
+                return null;
+            }
+            
+            // Look up user by email and get their UUID
+            var user = userRepository.findByEmail(email);
+            if (user.isPresent()) {
+                return user.get().getId().toString();
+            }
+            
+            return null;
+        } catch (Exception e) {
+            log.error("Error extracting user ID from authentication", e);
+            return null;
+        }
+    }
+
+    /**
+     * Generic API response wrapper
+     */
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class ApiResponse<T> {
+        private int status;
+        private String message;
+        private T data;
+    }
+}

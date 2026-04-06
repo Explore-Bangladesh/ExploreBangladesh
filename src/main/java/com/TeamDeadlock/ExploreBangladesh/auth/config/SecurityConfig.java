@@ -67,7 +67,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(AppConstants.AUTH_PUBLIC_URLS).permitAll()
-                        .requestMatchers("/", "/*.html", "/styles.css", "/script.js", "/Assets/**", "/js/**").permitAll()
+                        .requestMatchers("/", "/*.html", "/styles.css", "/script.js", "/Assets/**", "/js/**", "/smart-planner/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         .requestMatchers(AppConstants.AUTH_ADMIN_URLS).hasRole(AppConstants.ADMIN_ROLE)
                         .requestMatchers(AppConstants.AUTH_GUEST_URLS).hasRole(AppConstants.GUEST_ROLE)
