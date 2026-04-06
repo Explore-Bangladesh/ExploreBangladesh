@@ -132,10 +132,10 @@ header {
 }
 
 .dropdown-menu {
-    position: absolute !important;
+    position: absolute;
     top: 100%;
     right: 0;
-    z-index: 1050 !important;
+    z-index: 1050;
     min-width: 160px;
     margin-top: 0.125rem;
     background-color: #fff;
@@ -146,7 +146,20 @@ header {
 }
 
 .dropdown-menu.show {
-    display: block !important;
+    display: block;
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Ensure dropdown parent allows children to overflow */
+#userMenu,
+.dropdown {
+    overflow: visible !important;
+}
+
+/* Ensure dropdown menu items are clickable */
+.dropdown-menu.show .dropdown-item {
+    pointer-events: auto;
 }
 
 #avatarBtn {

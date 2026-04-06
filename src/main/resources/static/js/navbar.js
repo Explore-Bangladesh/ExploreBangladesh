@@ -54,10 +54,8 @@ async function updateNavbar() {
             console.error('Error loading profile:', error);
         }
         
-        // Re-initialize dropdown after showing
-        setTimeout(() => {
-            initAvatarDropdown();
-        }, 100);
+        // Initialize dropdown after showing user menu
+        initAvatarDropdown();
         
     } else {
         console.log('No token - showing login buttons');
@@ -68,8 +66,17 @@ async function updateNavbar() {
     }
 }
 
+// Global flag to prevent duplicate initialization
+let avatarDropdownInitialized = false;
+
 // Initialize avatar dropdown with proper click handlers
 function initAvatarDropdown() {
+    // Prevent duplicate initialization
+    if (avatarDropdownInitialized) {
+        console.log('Avatar dropdown already initialized');
+        return;
+    }
+
     const avatarBtn = document.getElementById('avatarBtn');
     const dropdownMenu = document.getElementById('avatarDropdown');
     
@@ -78,15 +85,20 @@ function initAvatarDropdown() {
         return;
     }
     
-    // Remove any existing event listeners
+    // Remove any existing event listeners by cloning
     const newAvatarBtn = avatarBtn.cloneNode(true);
     avatarBtn.parentNode.replaceChild(newAvatarBtn, avatarBtn);
     
-    // Get fresh references
+    // Get fresh references after replacement
     const freshAvatarBtn = document.getElementById('avatarBtn');
     const freshDropdownMenu = document.getElementById('avatarDropdown');
     
-    // Manual dropdown handler
+    if (!freshAvatarBtn || !freshDropdownMenu) {
+        console.error('Failed to get fresh references after cloning');
+        return;
+    }
+    
+    // Avatar button click handler - toggles dropdown
     freshAvatarBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -109,15 +121,18 @@ function initAvatarDropdown() {
         }
     });
     
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
+    // Close dropdown when clicking outside - single global handler
+    // This replaces the previous approach to avoid duplicate listeners
+    document.addEventListener('click', function closeDropdownOnOutsideClick(e) {
         if (!freshAvatarBtn.contains(e.target) && !freshDropdownMenu.contains(e.target)) {
             freshDropdownMenu.classList.remove('show');
             freshAvatarBtn.setAttribute('aria-expanded', 'false');
         }
     });
     
-    console.log('Avatar dropdown initialized');
+    // Mark as initialized
+    avatarDropdownInitialized = true;
+    console.log('Avatar dropdown initialized successfully');
 }
 
 // Open profile modal
@@ -376,8 +391,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Initialize dropdown again after everything loads
-    setTimeout(() => {
-        initAvatarDropdown();
-    }, 500);
+    // Initialize dropdown
+    initAvatarDropdown();
 });
