@@ -171,10 +171,10 @@
         <a href="login.html" class="btn btn-outline-primary me-2" id="loginBtn">Login</a>
         <a href="signup.html" class="btn btn-primary" id="signupBtn">Sign-up</a>
         <div class="dropdown d-none position-relative" id="userMenu" style="display: none;">
-          <button class="btn btn-light rounded-circle p-0" id="avatarBtn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-haspopup="true" style="width: 40px; height: 40px; overflow: hidden; flex-shrink: 0;">
+          <button class="btn btn-light rounded-circle p-0" id="avatarBtn" type="button" aria-expanded="false" aria-haspopup="true" style="width: 40px; height: 40px; overflow: hidden; flex-shrink: 0;">
             <img id="avatarImg" src="Assets/default_user.jpg" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;" />
           </button>
-          <ul class="dropdown-menu dropdown-menu-end" id="avatarDropdown" style="position: absolute; inset: auto 0px 0px auto; margin: 0; min-width: 10rem;">
+          <ul class="dropdown-menu dropdown-menu-end" id="avatarDropdown">
             <li><a class="dropdown-item" href="#" id="profileLink"><i class="bi bi-person me-2"></i>Profile</a></li>
             <li>
               <hr class="dropdown-divider">
@@ -339,9 +339,84 @@
     </div>
   </footer>
 
+  <!-- Profile Modal -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="profileModalLabel">Edit Profile</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="profileAlert" class="alert alert-success alert-dismissible fade d-none" role="alert">
+            Profile updated successfully!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          <div id="profileError" class="alert alert-danger alert-dismissible fade d-none" role="alert">
+            <span id="profileErrorMsg">Failed to update profile.</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+
+          <form id="profileForm">
+            <div class="text-center mb-4">
+              <img id="modalAvatarImg" src="Assets/default_user.jpg" alt="Profile" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
+              <br/>
+              <label for="imageUpload" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-camera"></i> Change Photo
+              </label>
+              <input type="file" id="imageUpload" class="d-none" accept="image/*">
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">First Name</label>
+                <input type="text" id="modalFirstName" class="form-control" placeholder="First Name">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Last Name</label>
+                <input type="text" id="modalLastName" class="form-control" placeholder="Last Name">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Email <small class="text-muted">(Read-only)</small></label>
+              <input type="email" id="modalEmail" class="form-control" readonly disabled>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Phone Number</label>
+              <input type="text" id="modalPhone" class="form-control" placeholder="Phone Number">
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Date of Birth</label>
+                <input type="date" id="modalDob" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Country</label>
+                <input type="text" id="modalCountry" class="form-control" placeholder="Country">
+              </div>
+            </div>
+
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="modalNewsletter">
+              <label class="form-check-label" for="modalNewsletter">Subscribe to newsletter</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="saveProfileBtn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
     crossorigin="anonymous"></script>
+  <script src="./js/auth.js"></script>
   <script src="./js/navbar.js"></script>
   <script src="./script.js"></script>
   <script>
