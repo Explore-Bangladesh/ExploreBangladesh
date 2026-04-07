@@ -114,6 +114,34 @@ public class AIEngineServiceImpl implements AIEngineService {
             "Rangpur Museum (4.4, 1.5h, Free) - Museum"
         ));
         
+        // KUAKATA
+        map.put("kuakata", Arrays.asList(
+            "Kuakata Beach (4.6, Flexible, Free) - Beach",
+            "Sudkanya Beach (4.5, 2h, Free) - Beach",
+            "Laboni Point (4.4, 1.5h, Free) - Beach",
+            "Fisherman Village (4.3, 2h, Free) - Cultural",
+            "Buddhist Temple (4.3, 1h, Free) - Religious",
+            "Hill Tracks (4.4, 3h, Free) - Nature",
+            "Saint Martin Island (4.5, 1 day, 800 BDT) - Island"
+        ));
+        
+        // BARISAL
+        map.put("barisal", Arrays.asList(
+            "Barisal Floating Market (4.5, 3h, Free) - Market",
+            "Sundarbans Tour (4.6, 1 day, 2500 BDT) - Nature",
+            "Swat River (4.4, 2h, Free) - River",
+            "Kirtonkhola River (4.3, 2h, Free) - River",
+            "Tentulia Bridge (4.4, 1.5h, Free) - Historical"
+        ));
+        
+        // MYMENSINGH
+        map.put("mymensingh", Arrays.asList(
+            "Botanical Garden (4.4, 2.5h, 50 BDT) - Garden",
+            "Mymensingh Agricultural University (4.3, 2h, Free) - Educational",
+            "Shoshimpur Mosque (4.3, 1h, Free) - Religious",
+            "Kewzar Lake (4.4, 1.5h, Free) - Recreation"
+        ));
+        
         return map;
     }
 

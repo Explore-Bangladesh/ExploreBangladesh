@@ -2,7 +2,9 @@ package com.TeamDeadlock.ExploreBangladesh.planner.controller;
 
 import com.TeamDeadlock.ExploreBangladesh.planner.dto.SmartPlanRequest;
 import com.TeamDeadlock.ExploreBangladesh.planner.entity.TravelPlan;
+import com.TeamDeadlock.ExploreBangladesh.planner.entity.AIGeneratedTravelPlan;
 import com.TeamDeadlock.ExploreBangladesh.planner.repository.TravelPlanRepository;
+import com.TeamDeadlock.ExploreBangladesh.planner.repository.AIGeneratedTravelPlanRepository;
 import com.TeamDeadlock.ExploreBangladesh.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +14,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
 /**
@@ -29,11 +33,12 @@ import java.util.stream.Collectors;
 public class SmartPlannerPhase1Controller {
 
     private final TravelPlanRepository travelPlanRepository;
+    private final AIGeneratedTravelPlanRepository aiGeneratedTravelPlanRepository;
     private final UserRepository userRepository;
 
     /**
      * GET /api/planner/my-plans
-     * Retrieve all plans for the authenticated user
+     * Retrieve ALL plans (both manual and AI-generated) for the authenticated user
      */
     @GetMapping("/my-plans")
     public ResponseEntity<?> getUserPlans(Authentication authentication) {
@@ -48,20 +53,44 @@ public class SmartPlannerPhase1Controller {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
             }
             
-            log.info("Fetching plans for user: {}", userId);
+            log.info("Fetching ALL plans for user: {}", userId);
 
-            List<TravelPlan> plans = travelPlanRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            // ✅ GET MANUAL PLANS from travel_plans table
+            List<TravelPlan> manualPlans = travelPlanRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            log.info("📊 Found {} MANUAL plans for user {}", manualPlans.size(), userId);
             
-            log.info("📊 Found {} plans for user {}", plans.size(), userId);
-            if (plans.size() > 0) {
-                plans.forEach(p -> log.info("   - Plan ID: {}, Destination: {}, User: {}", p.getPlanId(), p.getDestination(), p.getUserId()));
-            }
+            // ✅ GET AI-GENERATED PLANS from ai_generated_travel_plans table
+            List<AIGeneratedTravelPlan> aiPlans = aiGeneratedTravelPlanRepository.findByUserId(userId);
+            log.info("🤖 Found {} AI-GENERATED plans for user {}", aiPlans.size(), userId);
+            
+            // ✅ COMBINE BOTH LISTS
+            List<Map<String, Object>> allPlans = new ArrayList<>();
+            
+            // Add manual plans
+            allPlans.addAll(manualPlans.stream().map(p -> {
+                Map<String, Object> dto = convertToSimpleDTO(p);
+                dto.put("planType", "manual");  // Mark as manual
+                return dto;
+            }).collect(Collectors.toList()));
+            
+            // Add AI-generated plans
+            allPlans.addAll(aiPlans.stream().map(p -> {
+                Map<String, Object> dto = convertAITravelPlanToDTO(p);
+                dto.put("planType", "ai_generated");  // Mark as AI-generated
+                return dto;
+            }).collect(Collectors.toList()));
+            
+            int totalPlans = manualPlans.size() + aiPlans.size();
+            log.info("✅ Total {} plans retrieved (Manual: {}, AI-Generated: {})", 
+                totalPlans, manualPlans.size(), aiPlans.size());
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", 200);
             response.put("message", "Plans retrieved successfully");
-            response.put("data", plans.stream().map(this::convertToSimpleDTO).collect(Collectors.toList()));
-            response.put("totalPlans", plans.size());
+            response.put("data", allPlans);
+            response.put("totalPlans", totalPlans);
+            response.put("manualPlans", manualPlans.size());
+            response.put("aiGeneratedPlans", aiPlans.size());
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -76,6 +105,7 @@ public class SmartPlannerPhase1Controller {
     /**
      * GET /api/planner/{planId}
      * Retrieve a specific plan (basic details only, not full itinerary)
+     * ✅ FIXED: Now checks both manual AND AI-generated plans
      */
     @GetMapping("/{planId}")
     public ResponseEntity<?> getPlan(
@@ -93,20 +123,36 @@ public class SmartPlannerPhase1Controller {
             
             log.info("User {} retrieving plan: {}", userId, planId);
 
-            var plan = travelPlanRepository.findById(planId);
-            if (plan.isEmpty() || !plan.get().getUserId().equals(userId)) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("status", 404);
-                error.put("message", "Plan not found or unauthorized access");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            // ✅ TRY MANUAL PLANS FIRST
+            var manualPlan = travelPlanRepository.findById(planId);
+            if (manualPlan.isPresent() && manualPlan.get().getUserId().equals(userId)) {
+                log.info("✅ Found MANUAL plan {} for user {}", planId, userId);
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", 200);
+                response.put("message", "Plan retrieved successfully");
+                response.put("data", convertToSimpleDTO(manualPlan.get()));
+                response.put("planType", "manual");
+                return ResponseEntity.ok(response);
             }
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", 200);
-            response.put("message", "Plan retrieved successfully");
-            response.put("data", convertToSimpleDTO(plan.get()));
-            
-            return ResponseEntity.ok(response);
+            // ✅ TRY AI-GENERATED PLANS SECOND
+            var aiPlan = aiGeneratedTravelPlanRepository.findById(planId);
+            if (aiPlan.isPresent() && aiPlan.get().getUserId().equals(userId)) {
+                log.info("✅ Found AI-GENERATED plan {} for user {}", planId, userId);
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", 200);
+                response.put("message", "Plan retrieved successfully");
+                response.put("data", convertAITravelPlanToDTO(aiPlan.get()));
+                response.put("planType", "ai_generated");
+                return ResponseEntity.ok(response);
+            }
+
+            // ❌ PLAN NOT FOUND
+            log.warn("⚠️ Plan {} not found or unauthorized access for user {}", planId, userId);
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", 404);
+            error.put("message", "Plan not found or unauthorized access");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         } catch (Exception e) {
             log.error("Error retrieving plan", e);
             Map<String, Object> error = new HashMap<>();
@@ -183,7 +229,8 @@ public class SmartPlannerPhase1Controller {
 
     /**
      * DELETE /api/planner/{planId}
-     * Delete a plan
+     * Delete a plan (checks both manual and AI tables)
+     * ✅ FIXED: Now handles both table types
      */
     @DeleteMapping("/{planId}")
     public ResponseEntity<?> deletePlan(
@@ -201,22 +248,37 @@ public class SmartPlannerPhase1Controller {
             
             log.info("User {} deleting plan: {}", userId, planId);
 
-            var plan = travelPlanRepository.findById(planId);
-            if (plan.isEmpty() || !plan.get().getUserId().equals(userId)) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("status", 404);
-                error.put("message", "Plan not found or unauthorized access");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            // ✅ Try manual plans first
+            var manualPlan = travelPlanRepository.findById(planId);
+            if (manualPlan.isPresent() && manualPlan.get().getUserId().equals(userId)) {
+                travelPlanRepository.deleteById(planId);
+                log.info("✅ Deleted MANUAL plan {} for user {}", planId, userId);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", 200);
+                response.put("message", "Plan deleted successfully");
+                response.put("data", null);
+                return ResponseEntity.ok(response);
             }
 
-            travelPlanRepository.deleteById(planId);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", 200);
-            response.put("message", "Plan deleted successfully");
-            response.put("data", null);
-            
-            return ResponseEntity.ok(response);
+            // ✅ Try AI plans second
+            var aiPlan = aiGeneratedTravelPlanRepository.findById(planId);
+            if (aiPlan.isPresent() && aiPlan.get().getUserId().equals(userId)) {
+                aiGeneratedTravelPlanRepository.deleteById(planId);
+                log.info("✅ Deleted AI-GENERATED plan {} for user {}", planId, userId);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", 200);
+                response.put("message", "Plan deleted successfully");
+                response.put("data", null);
+                return ResponseEntity.ok(response);
+            }
+
+            // ❌ Plan not found in either table
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", 404);
+            error.put("message", "Plan not found or unauthorized access");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         } catch (Exception e) {
             log.error("Error deleting plan", e);
             Map<String, Object> error = new HashMap<>();
@@ -242,6 +304,26 @@ public class SmartPlannerPhase1Controller {
         dto.put("totalBudget", plan.getTotalBudgetEstimate());
         dto.put("createdAt", plan.getCreatedAt());
         dto.put("updatedAt", plan.getUpdatedAt());
+        return dto;
+    }
+
+    /**
+     * Convert AIGeneratedTravelPlan to simple DTO for listing/basic retrieval
+     * Extracts key fields from stored plan JSON when needed
+     */
+    private Map<String, Object> convertAITravelPlanToDTO(AIGeneratedTravelPlan plan) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("planId", plan.getId());
+        dto.put("destination", plan.getDestination());
+        dto.put("durationDays", plan.getDurationDays());
+        dto.put("budgetTier", plan.getBudgetTier());
+        dto.put("travelStyle", plan.getTravelStyle());
+        dto.put("totalBudgetEstimate", plan.getTotalBudgetEstimate());
+        dto.put("totalBudget", plan.getTotalBudgetEstimate());  // Alias for consistency
+        dto.put("status", "completed");  // AI plans are auto-completed
+        dto.put("createdAt", plan.getCreatedAt());
+        dto.put("updatedAt", plan.getUpdatedAt());
+        // Note: Full planData JSON is stored in plan.getPlanData(), can be retrieved if needed
         return dto;
     }
 

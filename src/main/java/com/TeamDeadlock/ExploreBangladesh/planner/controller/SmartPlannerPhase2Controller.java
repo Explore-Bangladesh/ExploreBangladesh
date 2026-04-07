@@ -2,6 +2,7 @@ package com.TeamDeadlock.ExploreBangladesh.planner.controller;
 
 import com.TeamDeadlock.ExploreBangladesh.planner.dto.*;
 import com.TeamDeadlock.ExploreBangladesh.planner.entity.TravelPlan;
+import com.TeamDeadlock.ExploreBangladesh.planner.entity.AIGeneratedTravelPlan;
 import com.TeamDeadlock.ExploreBangladesh.planner.repository.*;
 import com.TeamDeadlock.ExploreBangladesh.auth.repository.UserRepository;
 import com.TeamDeadlock.ExploreBangladesh.planner.service.impl.SmartPlannerServiceImplV2;
@@ -14,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,6 +37,7 @@ public class SmartPlannerPhase2Controller {
     private final TransportRouteRepository transportRouteRepository;
     private final ActivityRecommendationRepository activityRecommendationRepository;
     private final TravelPlanRepository travelPlanRepository;
+    private final AIGeneratedTravelPlanRepository aiGeneratedTravelPlanRepository;
     private final SmartPlannerServiceImplV2 smartPlannerServiceV2;
     private final UserRepository userRepository;
 
@@ -127,8 +130,88 @@ public class SmartPlannerPhase2Controller {
     }
 
     /**
+     * Save AI-generated plan to AIGeneratedTravelPlan table
+     * NEW endpoint for AI-generated plans (separate from manual plans)
+     * Called when user clicks "Save This Plan to My Trips" button from AI engine
+     * POST /api/planner/v2/ai/save
+     * ✅ FIXED: Now accepts FULL plan data and stores without regenerating
+     */
+    @PostMapping("/v2/ai/save")
+    public ResponseEntity<?> saveAIPlanV2(
+            @RequestBody Map<String, Object> payload,
+            Authentication authentication) {
+        try {
+            // Extract actual user ID from authentication
+            String userId = extractUserIdFromAuthentication(authentication);
+            
+            if (userId == null || userId.isEmpty()) {
+                log.warn("❌ Could not extract user ID from authentication");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(
+                    401,
+                    "Unauthorized: Could not identify user",
+                    null
+                ));
+            }
+            
+            // Extract basic plan information from payload
+            String destination = (String) payload.get("destination");
+            Integer durationDays = payload.get("durationDays") instanceof Number 
+                ? ((Number) payload.get("durationDays")).intValue() 
+                : null;
+            String budgetTier = (String) payload.get("budgetTier");
+            String travelStyle = (String) payload.get("travelStyle");
+            String startDate = (String) payload.get("startDate");
+            
+            log.info("💾 [SAVE AI PLAN] User {} saving AI-generated smart plan: {} ({} days)", 
+                userId, destination, durationDays);
+
+            // ✅ Extract FULL plan data (the complete AI response)
+            Object fullPlanData = payload.get("fullPlanData");
+            
+            if (fullPlanData == null) {
+                log.warn("⚠️ fullPlanData is null, will attempt save without full data");
+            }
+            
+            // Create a SmartPlanRequest for basic info
+            SmartPlanRequest request = new SmartPlanRequest();
+            request.setDestination(destination);
+            request.setDurationDays(durationDays);
+            request.setBudgetTier(budgetTier);
+            request.setTravelStyle(travelStyle);
+            // ✅ FIXED: Convert String startDate to LocalDate
+            if (startDate != null && !startDate.isEmpty()) {
+                try {
+                    request.setStartDate(LocalDate.parse(startDate));
+                } catch (Exception e) {
+                    log.warn("⚠️ Could not parse startDate: {}", startDate);
+                    request.setStartDate(null);
+                }
+            }
+            
+            // ✅ Save AI plan to AIGeneratedTravelPlan table with FULL plan data
+            EnhancedTravelPlanDTO plan = smartPlannerServiceV2.savePlanToAITable(request, userId, fullPlanData);
+
+            log.info("✅ AI Plan ID: {} has been saved to AIGeneratedTravelPlan table. User: {}", plan.getId(), userId);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(
+                201,
+                "AI plan saved successfully and added to My Trips",
+                plan
+            ));
+        } catch (Exception e) {
+            log.error("Error saving AI-generated plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                500,
+                "Failed to save AI plan: " + e.getMessage(),
+                null
+            ));
+        }
+    }
+
+    /**
      * Get Phase 2 intelligent travel plan by ID
      * GET /api/planner/v2/{planId}
+     * ✅ FIXED: Now checks both manual plans AND AI-generated plans
      * Regenerates full plan data from saved metadata
      */
     @GetMapping("/v2/{planId}")
@@ -149,61 +232,249 @@ public class SmartPlannerPhase2Controller {
 
             log.info("User {} retrieving travel plan: {}", userId, planId);
 
-            var travelPlan = travelPlanRepository.findById(planId);
-            if (travelPlan.isEmpty() || !travelPlan.get().getUserId().equals(userId)) {
-                log.warn("Travel plan {} not found or unauthorized access", planId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
-                    404,
-                    "Travel plan not found",
-                    null
-                ));
-            }
-
-            // IMPORTANT: Do NOT regenerate! Just retrieve the existing plan from database
-            // If we call generateSmartPlanV2 again, it will create a DUPLICATE entry!
-            log.info("⚠️ Retrieving saved plan from database (NOT regenerating)");
-            
-            // Return the saved plan data
-            TravelPlan savedPlan = travelPlan.get();
-            if (savedPlan.getPlanData() == null || savedPlan.getPlanData().isEmpty()) {
-                log.warn("⚠️ Plan saved but plan_data is empty, falling back to regeneration");
-                // Fallback: regenerate if data is missing
-                EnhancedTravelPlanDTO planDTO = smartPlannerServiceV2.regeneratePlanDisplay(savedPlan, userId);
-                return ResponseEntity.ok(new ApiResponse<>(
-                    200,
-                    "Travel plan retrieved successfully",
-                    planDTO
-                ));
-            }
-
-            try {
-                // Deserialize the saved plan from JSON
-                EnhancedTravelPlanDTO planDTO = objectMapper.readValue(
-                    savedPlan.getPlanData(),
-                    EnhancedTravelPlanDTO.class
-                );
+            // ✅ TRY AI-GENERATED PLANS FIRST (more specific)
+            var aiGeneratedPlan = aiGeneratedTravelPlanRepository.findById(planId);
+            if (aiGeneratedPlan.isPresent() && aiGeneratedPlan.get().getUserId().equals(userId)) {
+                log.info("✅ Found AI-GENERATED plan {} for user {}", planId, userId);
                 
-                log.info("📋 Successfully retrieved saved plan {}", planId);
-                return ResponseEntity.ok(new ApiResponse<>(
-                    200,
-                    "Travel plan retrieved successfully",
-                    planDTO
-                ));
-            } catch (Exception e) {
-                log.error("Failed to deserialize saved plan, attempting regeneration", e);
-                // Fallback: regenerate if deserialization fails
-                EnhancedTravelPlanDTO planDTO = smartPlannerServiceV2.regeneratePlanDisplay(savedPlan, userId);
-                return ResponseEntity.ok(new ApiResponse<>(
-                    200,
-                    "Travel plan retrieved successfully",
-                    planDTO
-                ));
+                AIGeneratedTravelPlan savedAIPlan = aiGeneratedPlan.get();
+                if (savedAIPlan.getPlanData() == null || savedAIPlan.getPlanData().isEmpty()) {
+                    log.warn("⚠️ AI Plan saved but plan_data is empty for plan {}", planId);
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                        500,
+                        "AI plan data is missing",
+                        null
+                    ));
+                }
+
+                try {
+                    // ✅ Return RAW JSON as Map (NO deserialization into Java DTO)
+                    // Frontend will handle JSON parsing
+                    Map<String, Object> rawPlanData = objectMapper.readValue(
+                        savedAIPlan.getPlanData(),
+                        Map.class
+                    );
+                    
+                    log.info("📋 Successfully retrieved AI-GENERATED plan {} as raw JSON", planId);
+                    return ResponseEntity.ok(new ApiResponse<>(
+                        200,
+                        "AI-generated travel plan retrieved successfully (raw format for frontend)",
+                        rawPlanData
+                    ));
+                } catch (Exception e) {
+                    log.error("Failed to parse AI-generated plan as JSON", e);
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                        500,
+                        "Failed to parse AI plan: " + e.getMessage(),
+                        null
+                    ));
+                }
             }
+
+            // ✅ TRY MANUAL PLANS SECOND
+            var manualTravelPlan = travelPlanRepository.findById(planId);
+            if (manualTravelPlan.isPresent() && manualTravelPlan.get().getUserId().equals(userId)) {
+                log.info("✅ Found MANUAL plan {} for user {}", planId, userId);
+                
+                TravelPlan savedPlan = manualTravelPlan.get();
+                if (savedPlan.getPlanData() == null || savedPlan.getPlanData().isEmpty()) {
+                    log.warn("⚠️ Plan saved but plan_data is empty, falling back to regeneration");
+                    // Fallback: regenerate if data is missing
+                    EnhancedTravelPlanDTO planDTO = smartPlannerServiceV2.regeneratePlanDisplay(savedPlan, userId);
+                    return ResponseEntity.ok(new ApiResponse<>(
+                        200,
+                        "Travel plan retrieved successfully",
+                        planDTO
+                    ));
+                }
+
+                try {
+                    // Deserialize the saved plan from JSON
+                    EnhancedTravelPlanDTO planDTO = objectMapper.readValue(
+                        savedPlan.getPlanData(),
+                        EnhancedTravelPlanDTO.class
+                    );
+                    
+                    log.info("📋 Successfully retrieved saved MANUAL plan {}", planId);
+                    return ResponseEntity.ok(new ApiResponse<>(
+                        200,
+                        "Travel plan retrieved successfully",
+                        planDTO
+                    ));
+                } catch (Exception e) {
+                    log.error("Failed to deserialize saved plan, attempting regeneration", e);
+                    // Fallback: regenerate if deserialization fails
+                    EnhancedTravelPlanDTO planDTO = smartPlannerServiceV2.regeneratePlanDisplay(savedPlan, userId);
+                    return ResponseEntity.ok(new ApiResponse<>(
+                        200,
+                        "Travel plan retrieved successfully",
+                        planDTO
+                    ));
+                }
+            }
+
+            // ❌ PLAN NOT FOUND IN EITHER TABLE
+            log.warn("⚠️ Plan {} not found in either table or unauthorized access for user {}", planId, userId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
+                404,
+                "Travel plan not found",
+                null
+            ));
         } catch (Exception e) {
             log.error("Error retrieving travel plan", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
                 500,
                 "Failed to retrieve plan: " + e.getMessage(),
+                null
+            ));
+        }
+    }
+
+    /**
+     * Get MANUAL travel plan by ID (specific endpoint)
+     * GET /api/planner/v2/manual/{planId}
+     * Only checks travel_plans table (manual plans)
+     */
+    @GetMapping("/v2/manual/{planId}")
+    public ResponseEntity<?> getManualTravelPlanV2(
+            @PathVariable Long planId,
+            Authentication authentication) {
+        try {
+            String userId = extractUserIdFromAuthentication(authentication);
+            
+            if (userId == null || userId.isEmpty()) {
+                log.warn("❌ Could not extract user ID from authentication");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(
+                    401,
+                    "Unauthorized: Could not identify user",
+                    null
+                ));
+            }
+
+            log.info("User {} retrieving MANUAL travel plan: {}", userId, planId);
+
+            var manualTravelPlan = travelPlanRepository.findById(planId);
+            if (manualTravelPlan.isEmpty() || !manualTravelPlan.get().getUserId().equals(userId)) {
+                log.warn("⚠️ MANUAL plan {} not found or unauthorized access for user {}", planId, userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
+                    404,
+                    "Manual travel plan not found",
+                    null
+                ));
+            }
+
+            TravelPlan savedPlan = manualTravelPlan.get();
+            if (savedPlan.getPlanData() == null || savedPlan.getPlanData().isEmpty()) {
+                log.warn("⚠️ MANUAL plan saved but plan_data is empty, falling back to regeneration");
+                EnhancedTravelPlanDTO planDTO = smartPlannerServiceV2.regeneratePlanDisplay(savedPlan, userId);
+                return ResponseEntity.ok(new ApiResponse<>(
+                    200,
+                    "Manual travel plan retrieved successfully",
+                    planDTO
+                ));
+            }
+
+            try {
+                EnhancedTravelPlanDTO planDTO = objectMapper.readValue(
+                    savedPlan.getPlanData(),
+                    EnhancedTravelPlanDTO.class
+                );
+                
+                log.info("📋 Successfully retrieved MANUAL plan {}", planId);
+                return ResponseEntity.ok(new ApiResponse<>(
+                    200,
+                    "Manual travel plan retrieved successfully",
+                    planDTO
+                ));
+            } catch (Exception e) {
+                log.error("Failed to deserialize MANUAL plan, attempting regeneration", e);
+                EnhancedTravelPlanDTO planDTO = smartPlannerServiceV2.regeneratePlanDisplay(savedPlan, userId);
+                return ResponseEntity.ok(new ApiResponse<>(
+                    200,
+                    "Manual travel plan retrieved successfully",
+                    planDTO
+                ));
+            }
+        } catch (Exception e) {
+            log.error("Error retrieving manual travel plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                500,
+                "Failed to retrieve manual plan: " + e.getMessage(),
+                null
+            ));
+        }
+    }
+
+    /**
+     * Get AI-GENERATED travel plan by ID (specific endpoint)
+     * GET /api/planner/v2/ai/{planId}
+     * Only checks ai_generated_travel_plans table (AI plans)
+     */
+    @GetMapping("/v2/ai/{planId}")
+    public ResponseEntity<?> getAITravelPlanV2(
+            @PathVariable Long planId,
+            Authentication authentication) {
+        try {
+            String userId = extractUserIdFromAuthentication(authentication);
+            
+            if (userId == null || userId.isEmpty()) {
+                log.warn("❌ Could not extract user ID from authentication");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(
+                    401,
+                    "Unauthorized: Could not identify user",
+                    null
+                ));
+            }
+
+            log.info("User {} retrieving AI-GENERATED travel plan: {}", userId, planId);
+
+            var aiGeneratedPlan = aiGeneratedTravelPlanRepository.findById(planId);
+            if (aiGeneratedPlan.isEmpty() || !aiGeneratedPlan.get().getUserId().equals(userId)) {
+                log.warn("⚠️ AI plan {} not found or unauthorized access for user {}", planId, userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
+                    404,
+                    "AI-generated travel plan not found",
+                    null
+                ));
+            }
+
+            AIGeneratedTravelPlan savedAIPlan = aiGeneratedPlan.get();
+            if (savedAIPlan.getPlanData() == null || savedAIPlan.getPlanData().isEmpty()) {
+                log.warn("⚠️ AI plan saved but plan_data is empty for plan {}", planId);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                    500,
+                    "AI plan data is missing",
+                    null
+                ));
+            }
+
+            try {
+                // ✅ Return RAW JSON as Map (NO deserialization into Java DTO)
+                // Frontend will handle JSON parsing
+                Map<String, Object> rawPlanData = objectMapper.readValue(
+                    savedAIPlan.getPlanData(),
+                    Map.class
+                );
+                
+                log.info("📋 Successfully retrieved AI-GENERATED plan {} as raw JSON", planId);
+                return ResponseEntity.ok(new ApiResponse<>(
+                    200,
+                    "AI-generated travel plan retrieved successfully (raw format for frontend)",
+                    rawPlanData
+                ));
+            } catch (Exception e) {
+                log.error("Failed to parse AI-generated plan as JSON", e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                    500,
+                    "Failed to parse AI plan: " + e.getMessage(),
+                    null
+                ));
+            }
+        } catch (Exception e) {
+            log.error("Error retrieving AI-generated travel plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                500,
+                "Failed to retrieve AI plan: " + e.getMessage(),
                 null
             ));
         }
@@ -552,6 +823,106 @@ public class SmartPlannerPhase2Controller {
             ar.getDurationHours(), ar.getRecommendedTimeSlot(),
             ar.getCostEstimationBdt(), ar.getSuitableForAgeGroup()
         );
+    }
+
+    /**
+     * DELETE /api/planner/v2/manual/{planId}
+     * Delete a MANUAL travel plan
+     */
+    @DeleteMapping("/v2/manual/{planId}")
+    public ResponseEntity<?> deleteManualTravelPlanV2(
+            @PathVariable Long planId,
+            Authentication authentication) {
+        try {
+            String userId = extractUserIdFromAuthentication(authentication);
+            
+            if (userId == null || userId.isEmpty()) {
+                log.warn("❌ Could not extract user ID from authentication");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(
+                    401,
+                    "Unauthorized: Could not identify user",
+                    null
+                ));
+            }
+
+            log.info("User {} deleting MANUAL travel plan: {}", userId, planId);
+
+            var manualTravelPlan = travelPlanRepository.findById(planId);
+            if (manualTravelPlan.isEmpty() || !manualTravelPlan.get().getUserId().equals(userId)) {
+                log.warn("⚠️ MANUAL plan {} not found or unauthorized access for user {}", planId, userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
+                    404,
+                    "Manual travel plan not found",
+                    null
+                ));
+            }
+
+            travelPlanRepository.deleteById(planId);
+            log.info("✅ Deleted MANUAL plan {} for user {}", planId, userId);
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                200,
+                "Manual travel plan deleted successfully",
+                null
+            ));
+        } catch (Exception e) {
+            log.error("Error deleting manual travel plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                500,
+                "Failed to delete manual plan: " + e.getMessage(),
+                null
+            ));
+        }
+    }
+
+    /**
+     * DELETE /api/planner/v2/ai/{planId}
+     * Delete an AI-GENERATED travel plan
+     */
+    @DeleteMapping("/v2/ai/{planId}")
+    public ResponseEntity<?> deleteAITravelPlanV2(
+            @PathVariable Long planId,
+            Authentication authentication) {
+        try {
+            String userId = extractUserIdFromAuthentication(authentication);
+            
+            if (userId == null || userId.isEmpty()) {
+                log.warn("❌ Could not extract user ID from authentication");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(
+                    401,
+                    "Unauthorized: Could not identify user",
+                    null
+                ));
+            }
+
+            log.info("User {} deleting AI-GENERATED travel plan: {}", userId, planId);
+
+            var aiGeneratedPlan = aiGeneratedTravelPlanRepository.findById(planId);
+            if (aiGeneratedPlan.isEmpty() || !aiGeneratedPlan.get().getUserId().equals(userId)) {
+                log.warn("⚠️ AI plan {} not found or unauthorized access for user {}", planId, userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
+                    404,
+                    "AI-generated travel plan not found",
+                    null
+                ));
+            }
+
+            aiGeneratedTravelPlanRepository.deleteById(planId);
+            log.info("✅ Deleted AI-GENERATED plan {} for user {}", planId, userId);
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                200,
+                "AI-generated travel plan deleted successfully",
+                null
+            ));
+        } catch (Exception e) {
+            log.error("Error deleting AI-generated travel plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                500,
+                "Failed to delete AI plan: " + e.getMessage(),
+                null
+            ));
+        }
     }
 
 

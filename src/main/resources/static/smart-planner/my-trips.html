@@ -359,8 +359,8 @@
                         </div>
                     </div>
                     <div class="trip-actions">
-                        <a href="plan-view-v2.html?planId=${trip.planId}" class="btn-action btn-view">View</a>
-                        <button class="btn-action btn-delete" onclick="deleteTrip(${trip.planId})">Delete</button>
+                        <a href="plan-view-v2.html?planId=${trip.planId}&planType=${trip.planType}" class="btn-action btn-view">View</a>
+                        <button class="btn-action btn-delete" onclick="deleteTrip(${trip.planId}, '${trip.planType}')">Delete</button>
                     </div>
                 </div>
             `;
@@ -390,14 +390,23 @@
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        async function deleteTrip(planId) {
+        async function deleteTrip(planId, planType) {
             if (!confirm('Are you sure you want to delete this trip?')) {
                 return;
             }
 
             try {
                 const token = getAccessToken();
-                const response = await fetch(`/api/planner/${planId}`, {
+                
+                // Use specific endpoint based on plan type
+                let endpoint = `/api/planner/${planId}`;
+                if (planType === 'ai_generated') {
+                    endpoint = `/api/planner/v2/ai/${planId}`;
+                } else if (planType === 'manual') {
+                    endpoint = `/api/planner/v2/manual/${planId}`;
+                }
+                
+                const response = await fetch(endpoint, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': 'Bearer ' + token,
