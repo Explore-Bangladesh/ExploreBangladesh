@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class SmartPlannerServiceImplV2 {
 
     private final TravelPlanRepository travelPlanRepository;
+    private final AIGeneratedTravelPlanRepository aiGeneratedTravelPlanRepository;
     private final ObjectMapper objectMapper;
     
     // Phase 2 repositories
@@ -247,6 +249,192 @@ public class SmartPlannerServiceImplV2 {
 
         log.info("Plan saved to database with realistic travel times. User: {}", travelPlan.getPlanId(), userId);
         return enhancedPlan;
+    }
+
+    /**
+     * Save AI-generated plan to AIGeneratedTravelPlan table
+     * This is the NEW method for storing AI-generated plans separately from manual plans
+     * Called when user clicks "Save This Plan to My Trips" button
+     */
+    @Transactional
+    public EnhancedTravelPlanDTO savePlanToAITable(SmartPlanRequest request, String userId) {
+        // ✅ Call overloaded method with null fullPlanData (will regenerate)
+        return savePlanToAITable(request, userId, null);
+    }
+
+    /**
+     * Save AI plan - WITH support for providing pre-generated full plan data
+     * ✅ NEW: Accepts fullPlanData to avoid regeneration
+     * If fullPlanData is provided, store it AS-IS without regenerating
+     * If null, fall back to generating from scratch
+     */
+    @Transactional
+    public EnhancedTravelPlanDTO savePlanToAITable(SmartPlanRequest request, String userId, Object fullPlanDataObj) {
+        // ✅ INPUT VALIDATION
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+        if (request.getDestination() == null || request.getDestination().isBlank()) {
+            throw new IllegalArgumentException("Destination cannot be empty");
+        }
+        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 30) {
+            throw new IllegalArgumentException("Duration must be between 1 and 30 days");
+        }
+        String budgetTier = request.getBudgetTier();
+        if (budgetTier == null || budgetTier.isBlank()) {
+            throw new IllegalArgumentException("Budget tier cannot be null or empty");
+        }
+        // Normalize budget tier: accept both "mid_range" and "midrange"
+        String normalizedBudgetTier = budgetTier.toLowerCase().replace("_", "");
+        if (!("budget".equals(normalizedBudgetTier) || "midrange".equals(normalizedBudgetTier) || "luxury".equals(normalizedBudgetTier))) {
+            throw new IllegalArgumentException("Invalid budget tier: " + budgetTier + ". Must be budget, mid_range/midrange, or luxury");
+        }
+        // Update request with normalized value
+        request.setBudgetTier(normalizedBudgetTier);
+        
+        log.info("💾 Saving AI-generated plan to AIGeneratedTravelPlan table for user: {}, destination: {}", userId, request.getDestination());
+
+        // Create AI plan entity (new table)
+        AIGeneratedTravelPlan aiPlan = new AIGeneratedTravelPlan();
+        aiPlan.setUserId(userId);
+        aiPlan.setDestination(request.getDestination());
+        aiPlan.setDurationDays(request.getDurationDays());
+        aiPlan.setBudgetTier(normalizedBudgetTier);
+        aiPlan.setTravelStyle(request.getTravelStyle());
+
+        try {
+            // ✅ CRITICAL: If fullPlanData is provided, use it directly WITHOUT regenerating
+            if (fullPlanDataObj != null) {
+                log.info("✅ [DIRECT SAVE] Using provided fullPlanData - STORING AS RAW JSON (NO PARSING)");
+                
+                // ✅ Store the AI response AS-IS without trying to parse it
+                String planDataJson = objectMapper.writeValueAsString(fullPlanDataObj);
+                aiPlan.setPlanData(planDataJson);
+                
+                log.info("📦 Stored AI plan data length: {} bytes", planDataJson.length());
+                
+                // Try to extract total budget from the plan object
+                try {
+                    if (fullPlanDataObj instanceof Map) {
+                        Map<String, Object> planMap = (Map<String, Object>) fullPlanDataObj;
+                        Object budgetObj = planMap.get("totalEstimatedCostBdt");
+                        if (budgetObj != null) {
+                            long budgetValue = ((Number) budgetObj).longValue();
+                            aiPlan.setTotalBudgetEstimate(BigDecimal.valueOf(budgetValue));
+                            log.info("💰 Total budget from fullPlanData: {}", budgetValue);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("⚠️ Could not extract budget from fullPlanData, leaving empty", e);
+                }
+                
+                AIGeneratedTravelPlan savedPlan = aiGeneratedTravelPlanRepository.save(aiPlan);
+                log.info("✅ AI Plan saved to AIGeneratedTravelPlan table with ID: {}. User: {}", savedPlan.getId(), userId);
+                
+                // ✅ Return a simple response with ID and RAW PLAN DATA
+                // Frontend will handle JSON parsing, not Java
+                EnhancedTravelPlanDTO response = new EnhancedTravelPlanDTO();
+                response.setId(savedPlan.getId());
+                response.setIsSaved(true);
+                response.setDestination(request.getDestination());
+                response.setDurationDays(request.getDurationDays());
+                response.setBudgetTier(request.getBudgetTier());
+                response.setTravelStyle(request.getTravelStyle());
+                // ✅ NOTE: We're NOT deserializing the full plan - that happens on frontend
+                
+                return response;
+            }
+            
+            // ❌ Fallback: If NO fullPlanData provided, regenerate from scratch
+            log.warn("⚠️ [FALLBACK] fullPlanData is null - falling back to regeneration");
+            
+            // Map destination name to ID
+            Long destinationId = mapDestinationToId(request.getDestination());
+
+            // ⭐ STEP 1: SELECT HOTEL FIRST (with coordinates)
+            Hotel primaryHotel = getPrimaryHotel(destinationId, request);
+            
+            log.info("🏨 Selected primary hotel: {} at ({}, {})", 
+                primaryHotel != null ? primaryHotel.getName() : "Default",
+                primaryHotel != null ? primaryHotel.getLatitude() : "?",
+                primaryHotel != null ? primaryHotel.getLongitude() : "?");
+
+            // Get attractions and restaurants
+            List<Attraction> availableAttractions = getAvailableAttractionsForPlanning(
+                destinationId, request, aiPlan.getDurationDays()
+            );
+            List<Restaurant> availableRestaurants = getAvailableRestaurantsForPlanning(
+                destinationId, request
+            );
+
+            // ⭐ STEP 2: Generate intelligent daily itineraries WITH hotel location & travel times
+            List<EnhancedDailyItineraryDTO> dailyItineraries = generateIntelligentItinerariesWithRouting(
+                null, request, primaryHotel, availableAttractions, availableRestaurants
+            );
+
+            // Get attraction recommendations
+            List<AttractionDTO> plannedAttractions = availableAttractions.stream()
+                .limit(aiPlan.getDurationDays() * 3)
+                .map(this::convertToAttractionDTO)
+                .collect(Collectors.toList());
+
+            // Get restaurant suggestions
+            List<RestaurantDTO> suggestedRestaurants = availableRestaurants.stream()
+                .limit(8)
+                .map(this::convertToRestaurantDTO)
+                .collect(Collectors.toList());
+
+            // Get transport routes
+            List<TransportRouteDTO> transportRoutes = getTransportRoutes(request);
+
+            // Calculate budget breakdown
+            BudgetBreakdownDto budgetBreakdown = calculateBudgetBreakdown(
+                dailyItineraries, Collections.singletonList(convertToHotelDTO(primaryHotel)), request
+            );
+
+            // Generate insights
+            TravelInsightsDTO insights = generateTravelInsights(
+                null, dailyItineraries, request
+            );
+
+            // Build enhanced plan response
+            EnhancedTravelPlanDTO enhancedPlan = new EnhancedTravelPlanDTO();
+            // ID will be set after save
+            enhancedPlan.setDestination(request.getDestination());
+            enhancedPlan.setDurationDays(request.getDurationDays());
+            enhancedPlan.setBudgetTier(normalizedBudgetTier);
+            enhancedPlan.setTravelStyle(request.getTravelStyle());
+            enhancedPlan.setDailyItineraries(dailyItineraries);
+            enhancedPlan.setBudgetBreakdown(budgetBreakdown);
+            enhancedPlan.setTotalEstimatedCostBdt(budgetBreakdown.getTotal().intValue());
+            enhancedPlan.setSelectedHotels(Collections.singletonList(convertToHotelDTO(primaryHotel)));
+            enhancedPlan.setPlannedAttractions(plannedAttractions);
+            enhancedPlan.setSuggestedRestaurants(suggestedRestaurants);
+            enhancedPlan.setTransportRoutes(transportRoutes);
+            enhancedPlan.setInsights(insights);
+            enhancedPlan.setIsSaved(true);
+
+            // Set budget estimate
+            aiPlan.setTotalBudgetEstimate(budgetBreakdown.getTotal());
+
+            // Save the complete plan as JSON to aiGeneratedTravelPlan table
+            String planDataJson = objectMapper.writeValueAsString(enhancedPlan);
+            aiPlan.setPlanData(planDataJson);
+            AIGeneratedTravelPlan savedPlan = aiGeneratedTravelPlanRepository.save(aiPlan);
+            
+            // Set ID in response DTO after save
+            enhancedPlan.setId(savedPlan.getId());
+            
+            log.info("✅ AI Plan saved (regenerated) to AIGeneratedTravelPlan table with ID: {}. User: {}", savedPlan.getId(), userId);
+        } catch (Exception e) {
+            log.error("Critical: Failed to save AI plan. Rolling back transaction.", e);
+            throw new RuntimeException("Failed to save AI plan: " + e.getMessage(), e);
+        }
+
+        return new EnhancedTravelPlanDTO(); // Placeholder, actual return above
     }
 
     @Transactional

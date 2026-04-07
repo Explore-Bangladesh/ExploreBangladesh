@@ -157,7 +157,7 @@ function createTripCard(trip) {
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <a href="plan-view-v2.html?planId=${trip.planId}" class="trip-card__btn trip-card__btn--primary" style="flex: 1; padding: 10px; background: #667eea; color: white; text-align: center; border-radius: 6px; text-decoration: none; cursor: pointer; font-weight: 500; transition: background 0.3s;">
+                <a href="plan-view-v2.html?planId=${trip.planId}&planType=${trip.planType || 'manual'}" class="trip-card__btn trip-card__btn--primary" style="flex: 1; padding: 10px; background: #667eea; color: white; text-align: center; border-radius: 6px; text-decoration: none; cursor: pointer; font-weight: 500; transition: background 0.3s;">
                     👁️ View
                 </a>
                 <button class="trip-card__btn trip-card__btn--danger" onclick="deleteTrip(${trip.planId})" style="flex: 1; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background 0.3s;">

@@ -9,12 +9,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Get parameters from URL
     const params = new URLSearchParams(window.location.search);
     const planId = params.get('planId');
+    const planType = params.get('planType');  // ✅ Get plan type from URL
     const isPreview = params.get('preview') === 'true';
     
-    console.log('🔗 URL Parameters: planId=' + planId + ', preview=' + isPreview);
+    console.log('🔗 URL Parameters: planId=' + planId + ', planType=' + planType + ', preview=' + isPreview);
     
     try {
         let plan = null;
+        let isRawAIFormat = false;  // ✅ Track if plan is raw AI format
         
         if (isPreview) {
             // Preview mode: Load from localStorage
@@ -30,28 +32,34 @@ document.addEventListener('DOMContentLoaded', async function() {
             plan = JSON.parse(previewData);
             console.log('✅ Preview plan loaded from localStorage');
             
-            // Apply AI adapter if this is an AI-generated plan
-            if (isAIPlan(plan)) {
-                console.log('🤖 [AI ADAPTER] Converting AI response format...');
-                plan = adaptAIResponse(plan);
-            }
+            // ✅ Preview is always AI format from Gemini, mark for adapter
+            isRawAIFormat = true;
             
             // Show Save Plan button in preview mode
             showSavePlanButton(formData ? JSON.parse(formData) : null);
         } else if (planId) {
             // Saved plan mode: Load from API
             console.log('📡 [SAVED MODE] Loading plan from API...');
-            plan = await loadPlanFromAPI(planId);
+            plan = await loadPlanFromAPI(planId, planType);  // ✅ Pass planType to API loader
             console.log('✅ Saved plan loaded from API');
             
-            // Apply AI adapter if this is an AI-generated plan
-            if (isAIPlan(plan)) {
-                console.log('🤖 [AI ADAPTER] Converting AI response format...');
-                plan = adaptAIResponse(plan);
+            // ✅ If this is an AI-generated plan, it's in raw format (no need to apply adapter)
+            isRawAIFormat = (planType === 'ai_generated');
+            
+            if (isRawAIFormat) {
+                console.log('🤖 [RAW AI FORMAT] Plan is raw AI format - will apply adapter for display');
+            } else {
+                console.log('📋 [MANUAL FORMAT] Plan is manual format - will use as-is');
             }
         } else {
             showError('No plan specified. Please create a plan first.');
             return;
+        }
+        
+        // ✅ Apply AI adapter to raw AI format (both preview and saved AI plans)
+        if (isRawAIFormat && isAIPlan(plan)) {
+            console.log('🤖 [AI ADAPTER] Converting raw AI response to display format...');
+            plan = adaptAIResponse(plan);
         }
         
         // Display the plan
@@ -67,13 +75,28 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 /**
  * Load plan from API (for saved plans)
+ * ✅ UPDATED: Now returns RAW JSON for AI plans (no deser ialization)
+ * Backend separation: AI plans return raw Map, manual plans return parsed DTOs
  */
-async function loadPlanFromAPI(planId) {
+async function loadPlanFromAPI(planId, planType) {
     try {
         const token = getAccessToken();
-        console.log('🔐 [API CALL] Fetching /api/planner/v2/' + planId);
         
-        const response = await fetch(`/api/planner/v2/${planId}`, {
+        // ✅ Determine which endpoint to use based on plan type
+        let endpoint;
+        if (planType === 'ai_generated') {
+            endpoint = `/api/planner/v2/ai/${planId}`;
+            console.log('🤖 [API CALL] Fetching AI plan (will receive RAW JSON): ' + endpoint);
+        } else if (planType === 'manual') {
+            endpoint = `/api/planner/v2/manual/${planId}`;
+            console.log('📋 [API CALL] Fetching MANUAL plan: ' + endpoint);
+        } else {
+            // Fallback: Use generic endpoint (checks both tables)
+            endpoint = `/api/planner/v2/${planId}`;
+            console.log('🔄 [API CALL] Fetching plan (auto-detect type): ' + endpoint);
+        }
+        
+        const response = await fetch(endpoint, {
             headers: {
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
@@ -87,7 +110,13 @@ async function loadPlanFromAPI(planId) {
         }
         
         const data = await response.json();
-        console.log('📦 [API DATA] Received plan data');
+        
+        // ✅ For AI plans, backend returns raw JSON (as Map)
+        if (planType === 'ai_generated') {
+            console.log('📦 [RAW AI FORMAT] Received raw JSON from backend - will apply adapter for display');
+        } else {
+            console.log('📦 [PARSED FORMAT] Received plan data');
+        }
         
         return data.data;
     } catch (error) {
@@ -97,7 +126,21 @@ async function loadPlanFromAPI(planId) {
 }
 
 /**
+ * Check if a plan is AI-generated
+ */
+function isAIPlan(plan) {
+    if (!plan) return false;
+    // Check for AI-specific fields that indicate this is from AIGeneratedPlanDTO
+    return plan.planStatus === 'ai_generated' || 
+           plan.aiInsights !== undefined ||
+           (plan.dailyItineraries && plan.dailyItineraries[0] && 
+            (plan.dailyItineraries[0].dayTitle !== undefined || 
+             plan.dailyItineraries[0].estimatedDailyBudget !== undefined));
+}
+
+/**
  * Show Save Plan button in preview mode
+ * ✅ FIXED: Passes FULL plan data (not just formData) to prevent regeneration
  */
 function showSavePlanButton(formData) {
     const saveBtnContainer = document.getElementById('savePlanContainer');
@@ -111,7 +154,13 @@ function showSavePlanButton(formData) {
         button.id = 'savePlanBtn';
         button.textContent = '💾 Save This Plan to My Trips';
         button.style.cssText = 'padding: 12px 30px; background: #4CAF50; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;';
-        button.onclick = () => savePlanToDatabase(formData);
+        button.onclick = () => {
+            // ✅ Get FULL plan data from localStorage
+            const fullPlan = localStorage.getItem('previewPlan') 
+                ? JSON.parse(localStorage.getItem('previewPlan')) 
+                : null;
+            savePlanToDatabase(formData, fullPlan);
+        };
         
         container.appendChild(button);
         
@@ -134,12 +183,17 @@ function showSavePlanButton(formData) {
 
 /**
  * Save the preview plan to database
+ * ✅ FIXED: Sends FULL plan data + formData to prevent regeneration
  */
-async function savePlanToDatabase(formData) {
+async function savePlanToDatabase(formData, fullPlan) {
     if (!formData) {
         console.error('No form data available');
         alert('Error: Could not save plan. Form data missing.');
         return;
+    }
+    
+    if (!fullPlan) {
+        console.warn('⚠️ Full plan data missing, will use formData only');
     }
     
     const saveBtn = document.getElementById('savePlanBtn');
@@ -153,15 +207,35 @@ async function savePlanToDatabase(formData) {
             throw new Error('Not authenticated');
         }
         
-        console.log('💾 [API CALL] Saving plan to /api/planner/v2/save');
+        // ✅ Create save payload with BOTH form data AND full plan
+        const savePayload = {
+            // Basic plan information
+            destination: formData.destination,
+            durationDays: formData.durationDays,
+            budgetTier: formData.budgetTier,
+            travelStyle: formData.travelStyle,
+            startDate: formData.startDate || null,
+            // ✅ CRITICAL: Full AI-generated plan data (to avoid regeneration)
+            fullPlanData: fullPlan,
+            // ✅ Mark as AI plan
+            planType: 'ai_generated'
+        };
         
-        const response = await fetch('/api/planner/v2/save', {
+        console.log('💾 [API CALL] Saving AI plan with FULL plan data to /api/planner/v2/ai/save');
+        console.log('📦 Payload includes:', {
+            destination: savePayload.destination,
+            durationDays: savePayload.durationDays,
+            fullPlanDataSize: fullPlan ? Object.keys(fullPlan).length + ' fields' : 'null',
+            planType: savePayload.planType
+        });
+        
+        const response = await fetch('/api/planner/v2/ai/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(savePayload)
         });
         
         console.log('📡 [RESPONSE] Status: ' + response.status);
@@ -187,9 +261,9 @@ async function savePlanToDatabase(formData) {
         // Show success message
         showMessage('✅ Plan saved successfully! Redirecting to My Trips...', 'success');
         
-        // Redirect to saved plan
+        // Redirect to saved plan with plan type
         setTimeout(() => {
-            window.location.href = `/smart-planner/plan-view-v2.html?planId=${savedPlan.id}`;
+            window.location.href = `/smart-planner/plan-view-v2.html?planId=${savedPlan.id}&planType=ai_generated`;
         }, 1500);
         
     } catch (error) {
