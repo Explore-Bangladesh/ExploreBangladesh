@@ -1,5 +1,98 @@
 let base64Image = null;
 
+function getDefaultAvatarSrc() {
+        const avatarImg = document.getElementById('avatarImg');
+        const currentSrc = avatarImg?.getAttribute('src');
+        return currentSrc || 'Assets/default_user.jpg';
+}
+
+function ensureProfileModal() {
+        let modalElement = document.getElementById('profileModal');
+        if (modalElement) {
+                return modalElement;
+        }
+
+        const defaultAvatarSrc = getDefaultAvatarSrc();
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="profileModalLabel">Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="profileAlert" class="alert alert-success alert-dismissible fade d-none" role="alert">
+                        Profile updated successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    <div id="profileError" class="alert alert-danger alert-dismissible fade d-none" role="alert">
+                        <span id="profileErrorMsg">Failed to update profile.</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+
+                    <form id="profileForm">
+                        <div class="text-center mb-4">
+                            <img id="modalAvatarImg" src="${defaultAvatarSrc}" alt="Profile" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;">
+                            <br/>
+                            <label for="imageUpload" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-camera"></i> Change Photo
+                            </label>
+                            <input type="file" id="imageUpload" class="d-none" accept="image/*">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">First Name</label>
+                                <input type="text" id="modalFirstName" class="form-control" placeholder="First Name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" id="modalLastName" class="form-control" placeholder="Last Name">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email <small class="text-muted">(Read-only)</small></label>
+                            <input type="email" id="modalEmail" class="form-control" readonly disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" id="modalPhone" class="form-control" placeholder="Phone Number">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" id="modalDob" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Country</label>
+                                <input type="text" id="modalCountry" class="form-control" placeholder="Country">
+                            </div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="modalNewsletter">
+                            <label class="form-check-label" for="modalNewsletter">Subscribe to newsletter</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveProfileBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+        modalElement = wrapper.firstElementChild;
+        document.body.appendChild(modalElement);
+        return modalElement;
+}
+
 /**
  * Update navbar UI based on authentication status
  */
@@ -39,9 +132,10 @@ async function updateNavbar() {
                 const user = await response.json();
                 const avatarImg = document.getElementById('avatarImg');
                 if (avatarImg) {
+                    const defaultAvatarSrc = getDefaultAvatarSrc();
                     avatarImg.src = user.image && user.image.startsWith('data:image')
                         ? user.image
-                        : (user.image || 'Assets/default_user.jpg');
+                        : (user.image || defaultAvatarSrc);
                 }
             } else if (response.status === 401 || response.status === 403) {
                 // Token invalid
@@ -145,12 +239,7 @@ async function openProfileModal() {
         return;
     }
 
-    const modalElement = document.getElementById('profileModal');
-    if (!modalElement) {
-        console.error('Profile modal not found');
-        alert('Profile modal not found');
-        return;
-    }
+    const modalElement = ensureProfileModal();
 
     try {
         const response = await fetch('/api/v1/profile/me', {
@@ -183,13 +272,14 @@ async function openProfileModal() {
             if (modalNewsletter) modalNewsletter.checked = user.subscribeNewsletter || false;
 
             if (modalAvatarImg) {
+                const defaultAvatarSrc = getDefaultAvatarSrc();
                 if (user.image && user.image.startsWith('data:image')) {
                     modalAvatarImg.src = user.image;
                     base64Image = user.image;
                 } else if (user.image) {
                     modalAvatarImg.src = user.image;
                 } else {
-                    modalAvatarImg.src = 'Assets/default_user.jpg';
+                    modalAvatarImg.src = defaultAvatarSrc;
                 }
             }
 
@@ -258,8 +348,8 @@ async function saveProfile() {
             
             // Update navbar avatar
             const avatarImg = document.getElementById('avatarImg');
-            if (updatedUser.image && avatarImg) {
-                avatarImg.src = updatedUser.image;
+            if (avatarImg) {
+                avatarImg.src = updatedUser.image || getDefaultAvatarSrc();
             }
 
             // Show success message
@@ -330,6 +420,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Update navbar
     await updateNavbar();
+
+    // Ensure modal exists for pages without inline modal markup.
+    ensureProfileModal();
     
     // Profile link click handler
     const profileLink = document.getElementById('profileLink');
@@ -338,12 +431,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.preventDefault();
             e.stopPropagation();
             console.log('Profile link clicked');
-            const profileModal = document.getElementById('profileModal');
-            if (profileModal) {
-                await openProfileModal();
-            } else {
-                window.location.href = 'profile.html';
-            }
+            await openProfileModal();
             
             // Close dropdown after clicking
             const dropdownMenu = document.getElementById('avatarDropdown');
