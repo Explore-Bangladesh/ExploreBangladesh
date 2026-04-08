@@ -420,6 +420,7 @@
     crossorigin="anonymous"></script>
   <script src="./js/auth.js"></script>
   <script src="./js/navbar.js"></script>
+  <script src="./js/place-image-map.js"></script>
   <script src="./script.js"></script>
   <script>
     const API_BASE = '/api/places';
@@ -427,6 +428,14 @@
     let activeCategory = 'All';
     let currentLocation = '';
     let viewMode = 'grid'; // 'grid' or 'list'
+
+    function resolvePlaceImage(place) {
+      const fallback = (place && place.imageUrl) || 'Assets/green scenary.jpg';
+      if (window.getLocalPlaceImage) {
+        return window.getLocalPlaceImage(place && place.name, fallback);
+      }
+      return fallback;
+    }
 
     // ── Load supported location suggestions on page load ──────────────────
     document.addEventListener('DOMContentLoaded', async () => {
@@ -646,7 +655,10 @@
         const res = await fetch(url);
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
-        allPlaces = data.places || [];
+        allPlaces = (data.places || []).map(place => ({
+          ...place,
+          imageUrl: resolvePlaceImage(place)
+        }));
         activeCategory = 'All';
         renderResults(data.location, allPlaces);
       } catch (err) {
@@ -787,11 +799,11 @@
             <div class="place-card card mb-3">
               <div class="row g-0">
                 <div class="col-md-4">
-                  <img src="${escapeHtml(place.imageUrl)}"
+                  <img src="${escapeHtml(resolvePlaceImage(place))}"
                        class="img-fluid h-100 w-100"
                        style="object-fit: cover; min-height: 250px;"
                        alt="${escapeHtml(place.name)}"
-                       onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'">
+                       onerror="this.src='Assets/green scenary.jpg'">
                 </div>
                 <div class="col-md-8">
                   <div class="place-card-body">
@@ -815,10 +827,10 @@
         } else {
           col.innerHTML = `
             <div class="place-card card">
-              <img src="${escapeHtml(place.imageUrl)}"
+              <img src="${escapeHtml(resolvePlaceImage(place))}"
                    class="place-card-img"
                    alt="${escapeHtml(place.name)}"
-                   onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'">
+                   onerror="this.src='Assets/green scenary.jpg'">
               <div class="place-card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                   <span class="place-category-badge ${catClass}">${escapeHtml(place.category)}</span>
