@@ -593,7 +593,7 @@
           '<div class="col-12 text-center py-4"><div class="spinner-border text-primary"></div></div>';
         document.getElementById('homeViewAllWrap').classList.add('d-none');
         try {
-          const res  = await fetch(`${HOME_API}/nearby?location=${encodeURIComponent(location)}`);
+          const res  = await fetch(`${HOME_API}/nearby?location=${encodeURIComponent(location)}&limit=100`);
           if (!res.ok) throw new Error();
           const data = await res.json();
           homeRenderCards(data.places || [], location);
