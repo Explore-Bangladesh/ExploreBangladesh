@@ -3,6 +3,9 @@
  * Displays intelligent itinerary with timeline, budget breakdown, and insights
  */
 
+// ✅ Global variable to track planning engine type (manual or ai)
+let planningEngine = 'ai';
+
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('📄 [PAGE LOAD] Loading Phase 2 Enhanced Plan View...');
     
@@ -11,6 +14,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const planId = params.get('planId');
     const planType = params.get('planType');  // ✅ Get plan type from URL
     const isPreview = params.get('preview') === 'true';
+    planningEngine = params.get('engine') || 'ai';  // ✅ Get planning engine (manual or ai)
     
     console.log('🔗 URL Parameters: planId=' + planId + ', planType=' + planType + ', preview=' + isPreview);
     
@@ -32,8 +36,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             plan = JSON.parse(previewData);
             console.log('✅ Preview plan loaded from localStorage');
             
-            // ✅ Preview is always AI format from Gemini, mark for adapter
-            isRawAIFormat = true;
+            // ✅ Check engine type to determine format
+            isRawAIFormat = (planningEngine === 'ai');
             
             // Show Save Plan button in preview mode
             showSavePlanButton(formData ? JSON.parse(formData) : null);
@@ -217,11 +221,15 @@ async function savePlanToDatabase(formData, fullPlan) {
             startDate: formData.startDate || null,
             // ✅ CRITICAL: Full AI-generated plan data (to avoid regeneration)
             fullPlanData: fullPlan,
-            // ✅ Mark as AI plan
-            planType: 'ai_generated'
+            // ✅ Mark plan type based on engine
+            planType: (planningEngine === 'ai') ? 'ai_generated' : 'manual'
         };
         
-        console.log('💾 [API CALL] Saving AI plan with FULL plan data to /api/planner/v2/ai/save');
+        // ✅ Determine endpoint based on engine type
+        const endpoint = (planningEngine === 'ai') ? '/api/planner/v2/ai/save' : '/api/planner/v2/save';
+        const engineLabel = (planningEngine === 'ai') ? 'AI' : 'Manual';
+        
+        console.log('💾 [API CALL] Saving ' + engineLabel + ' plan to ' + endpoint);
         console.log('📦 Payload includes:', {
             destination: savePayload.destination,
             durationDays: savePayload.durationDays,
@@ -229,7 +237,7 @@ async function savePlanToDatabase(formData, fullPlan) {
             planType: savePayload.planType
         });
         
-        const response = await fetch('/api/planner/v2/ai/save', {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -261,9 +269,19 @@ async function savePlanToDatabase(formData, fullPlan) {
         // Show success message
         showMessage('✅ Plan saved successfully! Redirecting to My Trips...', 'success');
         
-        // Redirect to saved plan with plan type
+        // ✅ FIXED: Use history.replaceState() to remove preview page from browser history
+        // This ensures that when user clicks back, they don't get the "Preview data not found" error
+        // The preview page entry is replaced with the my-trips entry
+        const myTripsUrl = '/smart-planner/my-trips.html';
+        window.history.replaceState(
+            { page: 'myTrips', timestamp: Date.now() },
+            'My Travel Plans',
+            myTripsUrl
+        );
+
+        // Redirect to My Trips page
         setTimeout(() => {
-            window.location.href = `/smart-planner/plan-view-v2.html?planId=${savedPlan.id}&planType=ai_generated`;
+            window.location.href = myTripsUrl;
         }, 1500);
         
     } catch (error) {
@@ -295,8 +313,8 @@ function displayPlanDetails(plan) {
     displayInsights(plan);
     
     // Display hotels
-    displayHotels(plan);
-    
+    displayHotels(plan, plan.budgetTier);
+
     // Update total cost
     if (plan.budgetBreakdown) {
         document.getElementById('totalCost').textContent = `৳ ${formatNumber(plan.budgetBreakdown.total)}`;
@@ -450,19 +468,38 @@ function displayInsights(plan) {
 /**
  * Display recommended hotels
  */
-function displayHotels(plan) {
+function displayHotels(plan, budgetTier) {
     const hotelsList = document.getElementById('hotelsList');
     hotelsList.innerHTML = '';
     
     if (!plan.selectedHotels || plan.selectedHotels.length === 0) {
-        hotelsList.innerHTML = '<li>No hotels available</li>';
+        // More informative message when no hotels available
+        const budgetTierLabel = formatBudgetTier(budgetTier);
+        hotelsList.innerHTML = `
+            <li style="color: #666; font-style: italic;">
+                ⚠️ No hotels found for ${budgetTierLabel} tier in database.
+                <br><small style="color: #999;">Accommodation cost calculated using default rate: ৳ 6,000/night</small>
+            </li>
+        `;
         return;
     }
     
     plan.selectedHotels.slice(0, 5).forEach(hotel => {
         const li = document.createElement('li');
         const rating = hotel.averageRating ? `⭐ ${hotel.averageRating}` : '';
-        const price = hotel.midrangePriceBdt ? `৳ ${formatNumber(hotel.midrangePriceBdt)}/night` : '';
+
+        // Get price based on budget tier
+        let pricePerNight = 0;
+        if (budgetTier && budgetTier.toLowerCase() === 'luxury') {
+            pricePerNight = hotel.luxuryPriceBdt || 10000;
+        } else if (budgetTier && (budgetTier.toLowerCase() === 'midrange' || budgetTier.toLowerCase() === 'mid_range')) {
+            pricePerNight = hotel.midrangePriceBdt || 6000;
+        } else {
+            // Default to economy
+            pricePerNight = hotel.economyPriceBdt || 2000;
+        }
+
+        const price = pricePerNight ? `৳ ${formatNumber(pricePerNight)}/night` : '';
         li.innerHTML = `<strong>${hotel.name}</strong> ${rating} ${price}`;
         hotelsList.appendChild(li);
     });
