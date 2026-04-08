@@ -20,10 +20,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-document.getElementById("guideSearchForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-  searchGuides();
-});
+const guideSearchForm = document.getElementById("guideSearchForm");
+if (guideSearchForm) {
+  guideSearchForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    searchGuides();
+  });
+}
 
 function showInitial() {
   document.getElementById("initialState").classList.add("active");
