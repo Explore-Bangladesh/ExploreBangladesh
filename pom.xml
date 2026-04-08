@@ -173,6 +173,7 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+					<jvmArguments>-Xmx1024m -Xms512m</jvmArguments>
 				</configuration>
 			</plugin>
 			<!-- Frees port 8080 before spring-boot:run — only active with -Prun profile -->

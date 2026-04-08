@@ -1000,20 +1000,20 @@ public class SmartPlannerServiceImplV2 {
             .sum();
 
         // ✅ USE ACTUAL CONSTRAINTS
-        // Use the hotels parameter instead of hardcoded 6000L
+        // Use ONLY the primary/selected hotel (first hotel in list)
         long accommodationTotal = 0L;
         if (hotels != null && !hotels.isEmpty()) {
-            for (HotelDTO hotel : hotels) {
-                long hotelPricePerNight = 0L;
-                if ("budget".equalsIgnoreCase(request.getBudgetTier())) {
-                    hotelPricePerNight = hotel.getEconomyPriceBdt() != null ? hotel.getEconomyPriceBdt() : 2000L;
-                } else if ("luxury".equalsIgnoreCase(request.getBudgetTier())) {
-                    hotelPricePerNight = hotel.getLuxuryPriceBdt() != null ? hotel.getLuxuryPriceBdt() : 10000L;
-                } else {
-                    hotelPricePerNight = hotel.getMidrangePriceBdt() != null ? hotel.getMidrangePriceBdt() : 6000L;
-                }
-                accommodationTotal += hotelPricePerNight * dailyItineraries.size();
+            // 🔧 BUG FIX: Use only the PRIMARY (first) hotel, not all hotels
+            HotelDTO primaryHotel = hotels.get(0);
+            long hotelPricePerNight = 0L;
+            if ("budget".equalsIgnoreCase(request.getBudgetTier())) {
+                hotelPricePerNight = primaryHotel.getEconomyPriceBdt() != null ? primaryHotel.getEconomyPriceBdt() : 2000L;
+            } else if ("luxury".equalsIgnoreCase(request.getBudgetTier())) {
+                hotelPricePerNight = primaryHotel.getLuxuryPriceBdt() != null ? primaryHotel.getLuxuryPriceBdt() : 10000L;
+            } else {
+                hotelPricePerNight = primaryHotel.getMidrangePriceBdt() != null ? primaryHotel.getMidrangePriceBdt() : 6000L;
             }
+            accommodationTotal = hotelPricePerNight * dailyItineraries.size();
         } else {
             // Fallback if no hotels provided
             log.warn("⚠️ No hotel prices available, using default 6000 BDT/night");
@@ -1290,21 +1290,21 @@ public class SmartPlannerServiceImplV2 {
      * Map destination name to ID
      */
     private Long mapDestinationToId(String destination) {
-        if (destination == null) return 1L;
-        
-        return switch (destination.toLowerCase()) {
-            case "dhaka" -> 1L;
-            case "cox's bazar", "cox bazar" -> 2L;
-            case "chittagong", "chattogram" -> 2L;
-            case "sylhet" -> 4L;
-            case "khulna" -> 5L;
-            case "rajshahi" -> 6L;
-            case "bogra" -> 6L;
-            case "bandarban" -> 2L;
-            case "kuakata" -> 5L;
-            default -> 1L; // Default to Dhaka
-        };
-    }
+    if (destination == null) return 1L;
+    
+    return switch (destination.toLowerCase()) {
+        case "dhaka" -> 1L;
+        case "cox's bazar", "cox bazar" -> 2L;
+        case "sylhet" -> 3L;                      
+        case "chittagong", "chattogram" -> 4L;    
+        case "khulna" -> 5L;
+        case "bandarban" -> 6L;                   
+        case "rajshahi" -> 1L;                    
+        case "bogra" -> 1L;                       
+        case "kuakata" -> 5L;                     
+        default -> 1L;
+    };
+}
     
     private Restaurant selectBreakfastRestaurant(Long destinationId) {
         if (destinationId == null) return null;
