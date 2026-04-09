@@ -421,6 +421,7 @@
   <script src="./js/auth.js"></script>
   <script src="./js/navbar.js"></script>
   <script src="./js/place-image-map.js"></script>
+  <script src="./js/places.js"></script>
   <script src="./script.js"></script>
   <script>
     const API_BASE = '/api/places';
@@ -727,68 +728,14 @@
           ? `<p class="small text-muted mb-2" style="line-height:1.6">${additionalInfo.join(' • ')}</p>` 
           : '';
 
-        // New: Travel details section with interactive tabs (using simple toggle)
+        // Place details modal trigger (restored flow)
         const upazilaBadge = place.upazila ? `<span class="badge bg-info text-dark me-2">📍 ${escapeHtml(place.upazila)} Upazila</span>` : '';
-        
-        const travelDetailsHtml = `
+
+        const detailsButtonHtml = `
           <div class="mt-3 border-top pt-2">
-            <button class="btn btn-sm btn-outline-primary w-100" type="button" 
-                    onclick="toggleTravelDetails('${place.id}'); return false;">
-              ℹ️ View Travel Details
+            <button class="btn btn-outline-primary w-100 js-view-place-details" type="button">
+              🔍 View Details
             </button>
-            <div id="details-${place.id}" style="display: none;" class="mt-2">
-              <!-- Travel Options Buttons -->
-              <div class="btn-group w-100 mb-2" role="group" style="flex-wrap: wrap;">
-                <button type="button" class="btn btn-sm btn-outline-primary" 
-                        onclick="showTravelDetail('${place.id}', 'howto'); return false;">
-                  🚗 How to Go
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-success" 
-                        onclick="showTravelDetail('${place.id}', 'hotels'); return false;">
-                  🏨 Hotels
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-warning" 
-                        onclick="showTravelDetail('${place.id}', 'cars'); return false;">
-                  🚙 Cars
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-info" 
-                        onclick="showTravelDetail('${place.id}', 'guides'); return false;">
-                  👤 Guides
-                </button>
-              </div>
-              
-              <!-- Content Area for Each Option -->
-              <div class="card card-body bg-light small" style="font-size:0.85rem; min-height: 80px;">
-                <!-- How to Go -->
-                <div id="howto-${place.id}" class="travel-detail-content" style="display: none;">
-                  <strong class="text-primary d-block mb-2">🚗 How to Go:</strong>
-                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.howToGo || 'Transportation information not available. Please check Google Maps for directions.')}</p>
-                </div>
-                
-                <!-- Hotels -->
-                <div id="hotels-${place.id}" class="travel-detail-content" style="display: none;">
-                  <strong class="text-success d-block mb-2">🏨 Hotels & Accommodations:</strong>
-                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.nearbyHotels || 'No hotel information available. Use our Hotels page to search for accommodations.')}</p>
-                </div>
-                
-                <!-- Cars -->
-                <div id="cars-${place.id}" class="travel-detail-content" style="display: none;">
-                  <strong class="text-warning d-block mb-2">🚙 Car Rentals:</strong>
-                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.nearbyCarRentals || 'No car rental information available. Book through our Cars page or contact local agencies.')}</p>
-                </div>
-                
-                <!-- Guides -->
-                <div id="guides-${place.id}" class="travel-detail-content" style="display: none;">
-                  <strong class="text-info d-block mb-2">👤 Tour Guides:</strong>
-                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.availableGuides || 'No tour guides available at this location. Contact local tourism office or book through our Travel Guide page.')}</p>
-                </div>
-                
-                <!-- Initial Message -->
-                <div id="initial-${place.id}" class="text-center text-muted py-3">
-                  <p class="mb-0">👆 Click a button above to view specific travel information</p>
-                </div>
-              </div>
-            </div>
           </div>`;
 
         const col = document.createElement('div');
@@ -819,7 +766,7 @@
                     <p class="text-muted small mb-2" style="line-height:1.5">${escapeHtml(place.description)}</p>
                     ${infoHtml}
                     <div class="mb-2">${highlights}</div>
-                    ${travelDetailsHtml}
+                    ${detailsButtonHtml}
                   </div>
                 </div>
               </div>
@@ -842,10 +789,19 @@
                 <p class="text-muted small mb-2" style="line-height:1.5">${escapeHtml(place.description)}</p>
                 ${infoHtml}
                 <div class="mb-2">${highlights}</div>
-                ${travelDetailsHtml}
+                ${detailsButtonHtml}
               </div>
             </div>`;
         }
+
+        const detailsButton = col.querySelector('.js-view-place-details');
+        if (detailsButton) {
+          detailsButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            showDetailsModal(place);
+          });
+        }
+
         grid.appendChild(col);
       });
     }
@@ -889,60 +845,6 @@
       currentLocation = '';
     }
 
-    // ── Travel Details Tab Functions ──────────────────────────────────────
-    function toggleTravelDetails(placeId) {
-      console.log(`Toggling travel details for: ${placeId}`);
-      const detailsDiv = document.getElementById(`details-${placeId}`);
-      if (!detailsDiv) {
-        console.error(`Details div not found: details-${placeId}`);
-        return;
-      }
-      
-      if (detailsDiv.style.display === 'none' || detailsDiv.style.display === '') {
-        detailsDiv.style.display = 'block';
-        console.log(`Travel details opened for: ${placeId}`);
-      } else {
-        detailsDiv.style.display = 'none';
-        console.log(`Travel details closed for: ${placeId}`);
-      }
-    }
-
-    function showTravelDetail(placeId, type) {
-      console.log('Showing travel detail:', type, 'for place:', placeId);
-      
-      // Hide all travel detail contents for this place
-      const detailsContainer = document.getElementById(`details-${placeId}`);
-      if (!detailsContainer) {
-        console.error('Details container not found for:', placeId);
-        return;
-      }
-      
-      const allContents = detailsContainer.querySelectorAll('.travel-detail-content');
-      allContents.forEach(content => {
-        content.style.display = 'none';
-      });
-      
-      // Hide initial message
-      const initialMsg = document.getElementById(`initial-${placeId}`);
-      if (initialMsg) initialMsg.style.display = 'none';
-      
-      // Show the selected content
-      const selectedContent = document.getElementById(`${type}-${placeId}`);
-      if (selectedContent) {
-        selectedContent.style.display = 'block';
-        // Add a subtle animation
-        selectedContent.style.animation = 'fadeIn 0.3s ease-in';
-        console.log('Content shown successfully');
-      } else {
-        console.error('Content not found:', `${type}-${placeId}`);
-      }
-    }
   </script>
-  <style>
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
 </body>
 </html>

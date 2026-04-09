@@ -650,8 +650,6 @@ public class SmartPlannerServiceImplV2 {
         Set<Long> usedAttractionIds = new HashSet<>();
         List<String> recentCategories = new ArrayList<>();
 
-        boolean noMoreAttractions = false;  // Flag to indicate when attractions are exhausted
-
         for (int day = 1; day <= request.getDurationDays(); day++) {
             EnhancedDailyItineraryDTO dailyPlan = new EnhancedDailyItineraryDTO();
             dailyPlan.setDayNumber(day);
@@ -665,69 +663,26 @@ public class SmartPlannerServiceImplV2 {
             boolean lunchScheduled = false;
 
             // ═══════════════════════════════════════════════════════
-            // CHECK: If all attractions are exhausted (at start of day)
+            // BREAKFAST at Hotel (9:00-10:00)
             // ═══════════════════════════════════════════════════════
-            boolean attractionsExhaustedToday = usedAttractionIds.size() >= availableAttractions.size();
-
-            // ═══════════════════════════════════════════════════════
-            // BREAKFAST at Hotel
-            // Time adjusted based on whether attractions are exhausted
-            // ═══════════════════════════════════════════════════════
-            String breakfastStart = attractionsExhaustedToday ? "08:00" : "09:00";
-            String breakfastEnd = attractionsExhaustedToday ? "09:00" : "10:00";
-            
             Restaurant breakfastRest = selectBreakfastRestaurant(mapDestinationToId(request.getDestination()));
             activities.add(createActivity(
                 "Breakfast at " + (hotel.getName()),
                 "Dining",
-                breakfastStart,
-                breakfastEnd,
+                "09:00",
+                "10:00",
                 hotel.getName(),
                 hotel.getLatitude(),
                 hotel.getLongitude(),
                 "Start your day with local cuisine",
                 "Hotel breakfast included"
             ));
-            currentTime = attractionsExhaustedToday ? LocalTime.of(9, 0) : LocalTime.of(10, 0);
+            currentTime = LocalTime.of(10, 0);
 
             // ═══════════════════════════════════════════════════════
-            // CHECK: If all attractions are exhausted, show completion message
+            // MORNING ACTIVITY (10:00-13:00 with travel time)
             // ═══════════════════════════════════════════════════════
-            if (attractionsExhaustedToday) {
-                // Calculate days with attractions and remaining days
-                int daysWithAttractions = day - 1;
-                int remainingDays = request.getDurationDays() - daysWithAttractions;
-                
-                log.info("✅ All {} attractions covered in {} days. Remaining days: {}", 
-                         usedAttractionIds.size(), daysWithAttractions, remainingDays);
-                
-                // Add completion message activity (09:00-17:00)
-                activities.add(createActivity(
-                    "All attractions in our database for " + request.getDestination() + 
-                    " have been covered in " + daysWithAttractions + " days. " +
-                    "Make your plan for the remaining " + remainingDays + " days. Stay healthy.",
-                    "Info",
-                    "09:00",
-                    "17:00",
-                    hotel.getName(),
-                    hotel.getLatitude(),
-                    hotel.getLongitude(),
-                    "You've completed all planned activities!",
-                    "Enjoy free time or explore local recommendations."
-                ));
-                
-                // Set currentTime to 17:00 to continue with return to hotel
-                currentTime = LocalTime.of(17, 0);
-                
-                // Set flag to break after this day
-                noMoreAttractions = true;
-            }
-
-            // ═══════════════════════════════════════════════════════
-            // MORNING ACTIVITY (with travel time)
-            // Skip if all attractions are exhausted
-            // ═══════════════════════════════════════════════════════
-            if (!noMoreAttractions && !remainingAttractions.isEmpty()) {
+            if (!remainingAttractions.isEmpty()) {
                 // Find closest attraction to hotel
                 Attraction morningAttraction = findClosestAttraction(
                     currentLocation, remainingAttractions, usedAttractionIds, request.getDestination()
@@ -788,9 +743,8 @@ public class SmartPlannerServiceImplV2 {
 
             // ═══════════════════════════════════════════════════════
             // LUNCH (around 13:00 or based on current location)
-            // Skip if all attractions are exhausted
             // ═══════════════════════════════════════════════════════
-            if (!noMoreAttractions && currentTime.isBefore(LocalTime.of(14, 0))) {
+            if (currentTime.isBefore(LocalTime.of(14, 0))) {
                 // Find nearest restaurant to current location
                 Restaurant lunchRest = findNearestRestaurant(
                     currentLocation, availableRestaurants
@@ -836,9 +790,8 @@ public class SmartPlannerServiceImplV2 {
 
             // ═══════════════════════════════════════════════════════
             // AFTERNOON ACTIVITY (after lunch)
-            // Skip if all attractions are exhausted
             // ═══════════════════════════════════════════════════════
-            if (!noMoreAttractions && !remainingAttractions.isEmpty() && currentTime.isBefore(LocalTime.of(18, 0))) {
+            if (!remainingAttractions.isEmpty() && currentTime.isBefore(LocalTime.of(18, 0))) {
                 Attraction afternoonAttraction = findClosestAttraction(
                     currentLocation, remainingAttractions, usedAttractionIds, request.getDestination()
                 );
@@ -962,14 +915,6 @@ public class SmartPlannerServiceImplV2 {
             dailyPlan.setAdvisories(generateDayAdvisories(request.getTravelStyle()));
 
             dailyItineraries.add(dailyPlan);
-            
-            // ═══════════════════════════════════════════════════════
-            // If all attractions have been covered, stop generating more days
-            // ═══════════════════════════════════════════════════════
-            if (noMoreAttractions) {
-                log.info("🏁 Itinerary generation complete. Total days created: {}", dailyItineraries.size());
-                break;  // Exit the day loop after finishing the current day
-            }
         }
 
         return dailyItineraries;

@@ -57,7 +57,9 @@ logs/
 .env.local
 .env.*.local
 application.properties
+application.propertices
 src/main/resources/application.properties
+src/main/resources/application.propertices
 !src/main/resources/application.properties.example
 application-local.properties
 application-secrets.properties
