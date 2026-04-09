@@ -18,6 +18,11 @@ html {
     height: 100vh !important;
 }
 
+.offcanvas .dropdown-item {
+    font-weight: 600;
+    color: #4b5563;
+}
+
 .offcanvas-backdrop {
     background-color: rgba(0, 0, 0, 0.3);
 }

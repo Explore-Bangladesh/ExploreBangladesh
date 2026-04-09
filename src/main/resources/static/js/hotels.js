@@ -258,17 +258,6 @@ function createHotelCard(hotel) {
                     <i class="bi bi-geo-alt"></i> ${hotel.address || 'Address unavailable'}
                 </p>
                 
-                ${hotel.amenities && hotel.amenities.length > 0 ? `
-                    <div class="mb-3">
-                        ${hotel.amenities.slice(0, 3).map(amenity =>
-        `<span class="amenity-badge">${amenity}</span>`
-    ).join('')}
-                        ${hotel.amenities.length > 3 ?
-                `<span class="amenity-badge">+${hotel.amenities.length - 3} more</span>`
-                : ''}
-                    </div>
-                ` : ''}
-                
                 ${hotel.reviewCount > 0 ? `
                     <p class="card-text small text-muted mb-2">
                         <i class="bi bi-chat-left-text"></i> ${hotel.reviewCount} reviews
@@ -351,13 +340,6 @@ function createHotelCardFromGeoapify(feature, index) {
                     <p class="card-text text-muted small mb-2">
                         <i class="bi bi-geo-alt"></i> ${address}
                     </p>
-
-                    <div class="mb-3">
-                        <span class="amenity-badge">WiFi</span>
-                        <span class="amenity-badge">Parking</span>
-                        <span class="amenity-badge">Restaurant</span>
-                    </div>
-
                     <div class="mt-3 w-100">
                         <button class="btn btn-sm btn-outline-primary w-100" onclick="viewHotelDetails('${name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
                             View Details

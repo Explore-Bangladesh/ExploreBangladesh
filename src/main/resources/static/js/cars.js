@@ -1,10 +1,26 @@
 // Cars Search JavaScript (pattern aligned with flights.js)
 const API_BASE_URL = "http://localhost:8080/api/cars";
+const FALLBACK_LOCATIONS = [
+  "Dhaka",
+  "Cox's Bazar",
+  "Chittagong",
+  "Sylhet",
+  "Rangamati",
+  "Khulna",
+  "Rajshahi",
+  "Bandarban",
+  "Tangail",
+  "Mymensingh",
+  "Barishal",
+  "Rangpur"
+];
 
 let hasSearched = false;
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
+  loadPickupLocationSuggestions();
+
   // Set default pick-up date (tomorrow)
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -51,6 +67,38 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => searchCars(), 300);
   }
 });
+
+async function loadPickupLocationSuggestions() {
+  const datalist = document.getElementById("pickupLocationSuggestions");
+  if (!datalist) return;
+
+  let locations = [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/cities`);
+    if (response.ok) {
+      const apiCities = await response.json();
+      if (Array.isArray(apiCities)) {
+        locations = apiCities.filter(Boolean);
+      }
+    }
+  } catch (error) {
+    console.warn("Could not load car city suggestions from API.", error);
+  }
+
+  if (locations.length === 0) {
+    locations = FALLBACK_LOCATIONS;
+  }
+
+  const uniqueSorted = [...new Set(locations.map((item) => String(item).trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+
+  datalist.innerHTML = "";
+  uniqueSorted.forEach((city) => {
+    const option = document.createElement("option");
+    option.value = city;
+    datalist.appendChild(option);
+  });
+}
 
 // Form submit handler
 document.getElementById("carSearchForm").addEventListener("submit", function (e) {
