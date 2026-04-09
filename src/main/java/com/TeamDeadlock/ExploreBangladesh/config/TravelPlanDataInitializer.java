@@ -62,7 +62,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
     private void seedBudgetPlans() {
         // 1. Chattogram – Cox's Bazar
         TravelPlanEntity p1 = planRepo.save(plan("bud-ctg", "Cox's Bazar Beach Escape",
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/f/f2/Cox%27s_Bazar_sea_beach--In_between_day_and_night.jpg?w=800",
             "BUDGET", 3, 2, 5500,
             "Experience the world's longest sea beach on a shoestring. Stay in budget guesthouses, eat fresh seafood at local stalls, and explore Laboni Point, Himchari and Inani Beach by CNG auto-rickshaw.",
             "October – March", "1–4 persons", "Chattogram",
@@ -107,7 +107,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 2. Sylhet
         TravelPlanEntity p2 = planRepo.save(plan("bud-syl", "Sylhet Tea Trail",
-            "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/8/8b/Sylhet_tea_garden.jpg?w=800",
             "BUDGET", 3, 2, 5000,
             "Explore lush tea gardens, crystal-clear rivers of Jaflong, and the enchanting Ratargul swamp forest. Stay in budget accommodations in Sylhet city.",
             "October – March", "1–4 persons", "Sylhet",
@@ -143,7 +143,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 3. Khulna – Sundarbans
         TravelPlanEntity p3 = planRepo.save(plan("bud-khl", "Sundarbans Quick Tour",
-            "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Save_the_sundarbans_20.jpg/1280px-Save_the_sundarbans_20.jpg?w=800",
             "BUDGET", 2, 1, 4000,
             "A quick budget trip into the world's largest mangrove forest. Spot wildlife, cruise through narrow creeks, and experience the raw beauty of the Sundarbans.",
             "November – February", "4–8 persons", "Khulna",
@@ -200,7 +200,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 5. Rajshahi
         TravelPlanEntity p5 = planRepo.save(plan("bud-raj", "Rajshahi Heritage Trail",
-            "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800",
+            "https://pbs.twimg.com/media/FyL-ACpWYAUO9Y_?format=jpg&name=900x900",
             "BUDGET", 2, 1, 3500,
             "Discover the ancient heritage of North Bengal — from the UNESCO Paharpur monastery to the Varendra Research Museum and the mighty Padma River.",
             "October – March", "1–4 persons", "Rajshahi",
@@ -226,7 +226,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 6. Rangpur
         TravelPlanEntity p6 = planRepo.save(plan("bud-rng", "Rangpur Quick Getaway",
-            "https://images.unsplash.com/photo-1585211969224-3e992986159d?w=800",
+            "http://upload.wikimedia.org/wikipedia/commons/d/d1/Tazhat_Rangpur.jpg?w=800",
             "BUDGET", 2, 1, 3200,
             "Visit the stunning Kantajew Temple, the Tajhat Palace, and explore the charming heritage of Bangladesh's northern region.",
             "October – March", "1–4 persons", "Rangpur",
@@ -252,7 +252,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 7. Barishal
         TravelPlanEntity p7 = planRepo.save(plan("bud-bar", "Barishal River Town",
-            "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/1/16/Barisal_Skyline.jpg?w=800",
             "BUDGET", 2, 1, 3500,
             "Experience the Venice of the East — cruise through floating markets, explore colonial-era architecture, and enjoy the peaceful riverine landscape of southern Bangladesh.",
             "October – March", "1–4 persons", "Barishal",
@@ -276,7 +276,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 8. Mymensingh
         TravelPlanEntity p8 = planRepo.save(plan("bud-mym", "Mymensingh Heritage Walk",
-            "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/A_front_view_of_Shashi_Lodge_4.jpg/1280px-A_front_view_of_Shashi_Lodge_4.jpg?w=800",
             "BUDGET", 2, 1, 3000,
             "Discover the zamindari heritage of Mymensingh — stunning palaces, the Brahmaputra riverside, and the lush botanical garden of Bangladesh Agricultural University.",
             "October – March", "1–4 persons", "Mymensingh",
@@ -308,7 +308,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
     private void seedStandardPlans() {
         // 1. Chattogram
         TravelPlanEntity p = planRepo.save(plan("std-ctg", "Cox's Bazar Comfort",
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Sunset_at_Saint_Martin.jpg/1280px-Sunset_at_Saint_Martin.jpg?w=800",
             "STANDARD", 4, 3, 15000,
             "A comfortable Cox's Bazar experience with 3-star hotel, AC transport, guided tours to Himchari, Inani, and a day trip to Teknaf with sea views.",
             "October – March", "2–6 persons", "Chattogram",
@@ -318,7 +318,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 2. Sylhet
         p = planRepo.save(plan("std-syl", "Sylhet Nature Explorer",
-            "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Jaflong_Sylhet.jpg/1920px-Jaflong_Sylhet.jpg?w=800",
             "STANDARD", 4, 3, 14000,
             "Comprehensive Sylhet exploration with comfortable stays. Visit Ratargul, Jaflong, Lalakhal, Bichnakandi, and Srimangal's tea estates.",
             "October – March", "2–6 persons", "Sylhet",
@@ -328,7 +328,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 3. Khulna
         p = planRepo.save(plan("std-khl", "Sundarbans Adventure",
-            "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/6/6a/Beauty_of_Sundarban_river.jpg?w=800",
             "STANDARD", 3, 2, 13000,
             "A proper Sundarbans adventure with private boat cabin, experienced guide, multiple forest trails, and wildlife watching towers.",
             "November – February", "4–8 persons", "Khulna",
@@ -338,7 +338,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 4. Dhaka
         p = planRepo.save(plan("std-dhk", "Dhaka City Explorer",
-            "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800",
+            "https://wallpapercat.com/w/full/b/3/5/1562621-2048x1152-desktop-hd-dhaka-bangladesh-background.jpg?w=800",
             "STANDARD", 3, 2, 10000,
             "Complete Dhaka experience with comfortable hotel, AC transport, and curated heritage tours covering both old and modern Dhaka with food tasting.",
             "October – March", "2–4 persons", "Dhaka",
@@ -348,7 +348,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 5. Rajshahi
         p = planRepo.save(plan("std-raj", "Rajshahi & Paharpur",
-            "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/2/27/Paharpur_Buddhist_Vihara.jpg?w=800",
             "STANDARD", 3, 2, 11000,
             "Explore Rajshahi's rich archaeological heritage with comfortable AC travel, including Paharpur UNESCO site, Puthia Temple Complex, and Bagha Mosque.",
             "October – March", "2–4 persons", "Rajshahi",
@@ -358,7 +358,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 6. Rangpur
         p = planRepo.save(plan("std-rng", "Rangpur-Dinajpur Explorer",
-            "https://images.unsplash.com/photo-1585211969224-3e992986159d?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/b/be/Kaharol_dinajpur.jpg?w=800",
             "STANDARD", 3, 2, 10500,
             "Comprehensive northern Bangladesh tour covering Kantajew Temple, Ramsagar Lake, Tajhat Palace, and the unique Dinajpur heritage sites.",
             "October – March", "2–4 persons", "Rangpur",
@@ -368,7 +368,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 7. Barishal
         p = planRepo.save(plan("std-bar", "Barishal-Kuakata Coastal",
-            "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/8/8c/Kuakata_Sea_Beach.JPG?w=800",
             "STANDARD", 3, 2, 12000,
             "Combine the river beauty of Barishal with Kuakata's unique sunrise-sunset beach. Comfortable hotel stays and AC transport throughout.",
             "October – March", "2–4 persons", "Barishal",
@@ -378,7 +378,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 8. Mymensingh
         p = planRepo.save(plan("std-mym", "Mymensingh Nature Trail",
-            "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Shashi_Lodge_best_view.jpg/1280px-Shashi_Lodge_best_view.jpg?w=800",
             "STANDARD", 3, 2, 10000,
             "Explore Mymensingh's zamindari grandeur, BAU campus, Muktagachha palace, Madhupur forest, and enjoy the charm of this historic river town.",
             "October – March", "2–4 persons", "Mymensingh",
@@ -417,7 +417,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
     private void seedPremiumPlans() {
         // 1. Chattogram
         TravelPlanEntity p = planRepo.save(plan("prm-ctg", "Cox's Bazar & St. Martin Luxury",
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/d/db/Saint_Martins_Island_with_boats_in_foreground.jpg?w=800",
             "PREMIUM", 5, 4, 35000,
             "The ultimate Cox's Bazar experience — 4-star beachfront resort, private car, St. Martin Island excursion with resort stay, spa treatments, and curated dining.",
             "November – February", "2–4 persons", "Chattogram",
@@ -427,7 +427,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 2. Sylhet
         p = planRepo.save(plan("prm-syl", "Sylhet Luxury Retreat",
-            "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/7/7a/Ratargul_Swamp_Forest%2C_Sylhet%2C_Bangladesh.jpg?w=800",
             "PREMIUM", 5, 4, 30000,
             "Luxury tea country retreat with boutique resort stays, private guided tours to all major attractions, and exclusive Srimangal tea tasting experiences.",
             "October – March", "2–4 persons", "Sylhet",
@@ -437,7 +437,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 3. Khulna
         p = planRepo.save(plan("prm-khl", "Sundarbans Premium Safari",
-            "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/0/08/Beauty_of_Sundarban_river02.jpg?w=800",
             "PREMIUM", 4, 3, 28000,
             "Premium Sundarbans expedition with luxury houseboat, personal naturalist guide, multiple wildlife trails, watchtowers, and gourmet catering.",
             "November – February", "2–6 persons", "Khulna",
@@ -447,7 +447,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 4. Dhaka
         p = planRepo.save(plan("prm-dhk", "Dhaka Royal Heritage",
-            "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/2/21/Lalbagh_fort%2C_Dhaka%2C_Bangladesh.jpg?w=800",
             "PREMIUM", 3, 2, 22000,
             "Dhaka like royalty — 5-star hotel, private guided heritage tours, exclusive food trails with celebrity chefs, and a premium Sonargaon day trip.",
             "October – March", "2–4 persons", "Dhaka",
@@ -457,7 +457,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 5. Rajshahi
         p = planRepo.save(plan("prm-raj", "North Bengal Premium",
-            "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/e/e7/Paris_road_rajshahi.JPG?w=800",
             "PREMIUM", 4, 3, 25000,
             "Luxury archaeological tour of North Bengal covering Paharpur, Mahasthangarh, Puthia, with 4-star stays, AC car, and expert archaeologist guide.",
             "October – March", "2–4 persons", "Rajshahi",
@@ -467,7 +467,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 6. Rangpur
         p = planRepo.save(plan("prm-rng", "North Bengal Heritage Luxury",
-            "https://images.unsplash.com/photo-1585211969224-3e992986159d?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/9/98/Rangpur_Town_Hall.jpg?w=800",
             "PREMIUM", 4, 3, 24000,
             "Luxury tour of northern Bangladesh's finest heritage sites — Kantajew Temple, Ramsagar, Tajhat Palace — with private car, premium hotel, and historian guide.",
             "October – March", "2–4 persons", "Rangpur",
@@ -477,7 +477,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 7. Barishal
         p = planRepo.save(plan("prm-bar", "Southern Coast Premium",
-            "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/7/78/Barisal_Launch_Terninal.jpg?w=800",
             "PREMIUM", 4, 3, 26000,
             "Premium southern Bangladesh experience — luxury launch cabin, Kuakata beachfront resort, sunrise & sunset from the same beach, private boat tours.",
             "October – March", "2–4 persons", "Barishal",
@@ -487,7 +487,7 @@ public class TravelPlanDataInitializer implements ApplicationRunner {
 
         // 8. Mymensingh
         p = planRepo.save(plan("prm-mym", "Mymensingh Palace Retreat",
-            "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800",
+            "https://upload.wikimedia.org/wikipedia/commons/8/8b/Shoshi_Lodge_Mymensingh_%28146352265%29.jpeg?w=800",
             "PREMIUM", 3, 2, 20000,
             "Luxury heritage retreat exploring all major Mymensingh palaces, Madhupur forest, and agricultural university campus with private transport and premium dining.",
             "October – March", "2–4 persons", "Mymensingh",
