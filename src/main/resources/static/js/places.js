@@ -1,3 +1,18 @@
+function resolveModalImage(place) {
+  const localFallback = 'Assets/green scenary.jpg';
+
+  if (typeof window.resolvePlaceImage === 'function') {
+    return window.resolvePlaceImage(place);
+  }
+
+  const fallback = (place && place.imageUrl) || localFallback;
+  if (typeof window.getLocalPlaceImage === 'function') {
+    return window.getLocalPlaceImage(place && place.name, fallback);
+  }
+
+  return fallback;
+}
+
 // --- MODAL FOR PLACE DETAILS ---
 function showDetailsModal(place) {
   // Check if a modal already exists, if not, create it
@@ -39,7 +54,13 @@ function showDetailsModal(place) {
 
   // Populate modal content
   document.getElementById('placeDetailsModalLabel').textContent = place.name;
-  document.getElementById('modalPlaceImage').src = place.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image';
+  const modalImage = document.getElementById('modalPlaceImage');
+  modalImage.src = resolveModalImage(place);
+  modalImage.alt = `${place.name} image`;
+  modalImage.onerror = function onModalImageError() {
+    this.onerror = null;
+    this.src = 'Assets/green scenary.jpg';
+  };
   document.getElementById('modalPlaceDescription').textContent = place.description;
 
   // Create dynamic links with correct parameter names for each page
