@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('checkOutDate').value = checkOutParam || dayAfter.toISOString().split('T')[0];
         if (guestsParam) document.getElementById('adults').value = guestsParam;
 
-        // Auto-trigger search with delay
-        setTimeout(() => searchHotels(), 500);
+        // Auto-trigger search
+        searchHotels();
     } else {
         // Default behavior
         document.getElementById('checkInDate').value = tomorrow.toISOString().split('T')[0];
@@ -36,13 +36,10 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Handle search form submission
-const hotelSearchForm = document.getElementById('hotelSearchForm');
-if (hotelSearchForm) {
-    hotelSearchForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        searchHotels();
-    });
-}
+document.getElementById('hotelSearchForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    searchHotels();
+});
 
 // Search hotels function
 async function searchHotels() {

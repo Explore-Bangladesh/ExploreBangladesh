@@ -58,14 +58,6 @@ public class PlacesRecommendationService {
      */
     public PlaceRecommendationResponse getRecommendationsFiltered(
             String location, String sortBy, String category, String searchQuery) {
-        return getRecommendationsFiltered(location, sortBy, category, searchQuery, Integer.MAX_VALUE);
-    }
-
-    /**
-     * Get recommendations with sorting options and limit
-     */
-    public PlaceRecommendationResponse getRecommendationsFiltered(
-            String location, String sortBy, String category, String searchQuery, int limit) {
         
         PlaceRecommendationResponse response = getRecommendations(location);
         List<Place> places = response.getPlaces();
@@ -112,11 +104,6 @@ public class PlacesRecommendationService {
                     places.sort((a, b) -> Double.compare(b.getRating(), a.getRating()));
                     break;
             }
-        }
-
-        // Apply limit
-        if (limit < Integer.MAX_VALUE && places.size() > limit) {
-            places = places.stream().limit((long) limit).collect(Collectors.toList());
         }
 
         response.setPlaces(places);

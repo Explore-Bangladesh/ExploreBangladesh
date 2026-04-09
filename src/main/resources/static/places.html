@@ -415,49 +415,27 @@
     </div>
   </div>
 
-  <!-- --- MODAL FOR PLACE DETAILS --- -->
-  <div class="modal fade" id="placeDetailsModal" tabindex="-1" aria-labelledby="placeDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="placeDetailsModalLabel"></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row">
-            <div class="col-md-6">
-              <img id="modalPlaceImage" src="" class="img-fluid rounded mb-3" alt="Place image">
-              <p id="modalPlaceDescription"></p>
-            </div>
-            <div class="col-md-6">
-              <h5>Plan Your Visit</h5>
-              <p>Find services available for this location:</p>
-              <div class="d-grid gap-2">
-                <a href="#" id="modalCarLink" class="btn btn-outline-primary"><i class="bi bi-car-front-fill me-2"></i>Find a Car</a>
-                <a href="#" id="modalHotelLink" class="btn btn-outline-primary"><i class="bi bi-building me-2"></i>Find a Hotel</a>
-                <a href="#" id="modalGuideLink" class="btn btn-outline-primary"><i class="bi bi-person-check-fill me-2"></i>Find a Guide</a>
-                <a href="#" id="modalHowToGoLink" class="btn btn-outline-info mt-3" target="_blank"><i class="bi bi-map me-2"></i>How to Go (Google Maps)</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
     crossorigin="anonymous"></script>
   <script src="./js/auth.js"></script>
   <script src="./js/navbar.js"></script>
+  <script src="./js/place-image-map.js"></script>
   <script src="./script.js"></script>
-  <script src="./js/places.js"></script>
   <script>
     const API_BASE = '/api/places';
     let allPlaces = [];
     let activeCategory = 'All';
     let currentLocation = '';
     let viewMode = 'grid'; // 'grid' or 'list'
+
+    function resolvePlaceImage(place) {
+      const fallback = (place && place.imageUrl) || 'Assets/green scenary.jpg';
+      if (window.getLocalPlaceImage) {
+        return window.getLocalPlaceImage(place && place.name, fallback);
+      }
+      return fallback;
+    }
 
     // ── Load supported location suggestions on page load ──────────────────
     document.addEventListener('DOMContentLoaded', async () => {
@@ -670,14 +648,17 @@
       const searchQuery = document.getElementById('searchQuery') ? document.getElementById('searchQuery').value : '';
 
       try {
-        let url = `${API_BASE}/nearby?location=${encodeURIComponent(location)}&limit=100`;
+        let url = `${API_BASE}/nearby?location=${encodeURIComponent(location)}`;
         if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
         
         const res = await fetch(url);
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
-        allPlaces = data.places || [];
+        allPlaces = (data.places || []).map(place => ({
+          ...place,
+          imageUrl: resolvePlaceImage(place)
+        }));
         activeCategory = 'All';
         renderResults(data.location, allPlaces);
       } catch (err) {
@@ -752,11 +733,61 @@
         const travelDetailsHtml = `
           <div class="mt-3 border-top pt-2">
             <button class="btn btn-sm btn-outline-primary w-100" type="button" 
-                    onclick="showDetailsModal({name: '${escapeHtml(place.name)}', imageUrl: '${escapeHtml(place.imageUrl)}', description: '${escapeHtml(place.description)}'}); return false;">
-              🔍 View Details
+                    onclick="toggleTravelDetails('${place.id}'); return false;">
+              ℹ️ View Travel Details
             </button>
             <div id="details-${place.id}" style="display: none;" class="mt-2">
-              <!-- Travel Details removed - using modal instead -->
+              <!-- Travel Options Buttons -->
+              <div class="btn-group w-100 mb-2" role="group" style="flex-wrap: wrap;">
+                <button type="button" class="btn btn-sm btn-outline-primary" 
+                        onclick="showTravelDetail('${place.id}', 'howto'); return false;">
+                  🚗 How to Go
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success" 
+                        onclick="showTravelDetail('${place.id}', 'hotels'); return false;">
+                  🏨 Hotels
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning" 
+                        onclick="showTravelDetail('${place.id}', 'cars'); return false;">
+                  🚙 Cars
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info" 
+                        onclick="showTravelDetail('${place.id}', 'guides'); return false;">
+                  👤 Guides
+                </button>
+              </div>
+              
+              <!-- Content Area for Each Option -->
+              <div class="card card-body bg-light small" style="font-size:0.85rem; min-height: 80px;">
+                <!-- How to Go -->
+                <div id="howto-${place.id}" class="travel-detail-content" style="display: none;">
+                  <strong class="text-primary d-block mb-2">🚗 How to Go:</strong>
+                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.howToGo || 'Transportation information not available. Please check Google Maps for directions.')}</p>
+                </div>
+                
+                <!-- Hotels -->
+                <div id="hotels-${place.id}" class="travel-detail-content" style="display: none;">
+                  <strong class="text-success d-block mb-2">🏨 Hotels & Accommodations:</strong>
+                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.nearbyHotels || 'No hotel information available. Use our Hotels page to search for accommodations.')}</p>
+                </div>
+                
+                <!-- Cars -->
+                <div id="cars-${place.id}" class="travel-detail-content" style="display: none;">
+                  <strong class="text-warning d-block mb-2">🚙 Car Rentals:</strong>
+                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.nearbyCarRentals || 'No car rental information available. Book through our Cars page or contact local agencies.')}</p>
+                </div>
+                
+                <!-- Guides -->
+                <div id="guides-${place.id}" class="travel-detail-content" style="display: none;">
+                  <strong class="text-info d-block mb-2">👤 Tour Guides:</strong>
+                  <p class="text-muted mb-0" style="white-space: pre-line;">${escapeHtml(place.availableGuides || 'No tour guides available at this location. Contact local tourism office or book through our Travel Guide page.')}</p>
+                </div>
+                
+                <!-- Initial Message -->
+                <div id="initial-${place.id}" class="text-center text-muted py-3">
+                  <p class="mb-0">👆 Click a button above to view specific travel information</p>
+                </div>
+              </div>
             </div>
           </div>`;
 
@@ -768,11 +799,11 @@
             <div class="place-card card mb-3">
               <div class="row g-0">
                 <div class="col-md-4">
-                  <img src="${escapeHtml(place.imageUrl)}"
+                  <img src="${escapeHtml(resolvePlaceImage(place))}"
                        class="img-fluid h-100 w-100"
                        style="object-fit: cover; min-height: 250px;"
                        alt="${escapeHtml(place.name)}"
-                       onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'">
+                       onerror="this.src='Assets/green scenary.jpg'">
                 </div>
                 <div class="col-md-8">
                   <div class="place-card-body">
@@ -796,10 +827,10 @@
         } else {
           col.innerHTML = `
             <div class="place-card card">
-              <img src="${escapeHtml(place.imageUrl)}"
+              <img src="${escapeHtml(resolvePlaceImage(place))}"
                    class="place-card-img"
                    alt="${escapeHtml(place.name)}"
-                   onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'">
+                   onerror="this.src='Assets/green scenary.jpg'">
               <div class="place-card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                   <span class="place-category-badge ${catClass}">${escapeHtml(place.category)}</span>
@@ -905,64 +936,6 @@
       } else {
         console.error('Content not found:', `${type}-${placeId}`);
       }
-    }
-
-    // --- MODAL FOR PLACE DETAILS ---
-    function showDetailsModal(place) {
-      // Check if a modal already exists, if not, create it
-      let modal = document.getElementById('placeDetailsModal');
-      if (!modal) {
-        const modalHTML = `
-          <div class="modal fade" id="placeDetailsModal" tabindex="-1" aria-labelledby="placeDetailsModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="placeDetailsModalLabel"></h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <img id="modalPlaceImage" src="" class="img-fluid rounded mb-3" alt="Place image">
-                      <p id="modalPlaceDescription"></p>
-                    </div>
-                    <div class="col-md-6">
-                      <h5>Plan Your Visit</h5>
-                      <p>Find services available for this location:</p>
-                      <div class="d-grid gap-2">
-                        <a href="#" id="modalCarLink" class="btn btn-outline-primary"><i class="bi bi-car-front-fill me-2"></i>Find a Car</a>
-                        <a href="#" id="modalHotelLink" class="btn btn-outline-primary"><i class="bi bi-building me-2"></i>Find a Hotel</a>
-                        <a href="#" id="modalGuideLink" class="btn btn-outline-primary"><i class="bi bi-person-check-fill me-2"></i>Find a Guide</a>
-                        <a href="#" id="modalHowToGoLink" class="btn btn-outline-info mt-3" target="_blank"><i class="bi bi-map me-2"></i>How to Go (Google Maps)</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        modal = document.getElementById('placeDetailsModal');
-      }
-
-      // Populate modal content
-      document.getElementById('placeDetailsModalLabel').textContent = place.name;
-      document.getElementById('modalPlaceImage').src = place.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image';
-      document.getElementById('modalPlaceDescription').textContent = place.description;
-
-      // Create dynamic links
-      const locationName = place.name.split(',')[0].trim();
-      document.getElementById('modalCarLink').href = `cars.html?location=${encodeURIComponent(locationName)}`;
-      document.getElementById('modalHotelLink').href = `hotels.html?destination=${encodeURIComponent(locationName)}`;
-      document.getElementById('modalGuideLink').href = `guides.html?city=${encodeURIComponent(locationName)}`;
-      
-      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name)}`;
-      document.getElementById('modalHowToGoLink').href = googleMapsUrl;
-
-      // Show the modal
-      const bootstrapModal = new bootstrap.Modal(modal);
-      bootstrapModal.show();
     }
   </script>
   <style>

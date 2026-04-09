@@ -20,7 +20,7 @@ public class PlacesController {
     }
 
     /**
-     * GET /api/places/nearby?location=Tangail&sortBy=rating&category=Heritage&search=mosque&limit=100
+     * GET /api/places/nearby?location=Tangail&sortBy=rating&category=Heritage&search=mosque
      * Returns recommended visiting places for the given location with optional filtering and sorting.
      */
     @GetMapping("/nearby")
@@ -28,15 +28,14 @@ public class PlacesController {
             @RequestParam(required = false, defaultValue = "Dhaka") String location,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "100") int limit) {
+            @RequestParam(required = false) String search) {
 
         if (location.trim().isEmpty()) {
             location = "Dhaka";
         }
 
         PlaceRecommendationResponse response = placesService.getRecommendationsFiltered(
-                location, sortBy, category, search, limit);
+                location, sortBy, category, search);
         return ResponseEntity.ok(response);
     }
 

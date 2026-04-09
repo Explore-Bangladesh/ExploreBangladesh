@@ -71,10 +71,117 @@
       </ul>
     </div>
   </div>
-  <main>
-    <div class="hero-content">
-      <h1 class="display-3 fw-bold text-white mb-3">Discover Bangladesh</h1>
-      <p class="lead text-white mb-4">Explore the beauty of our heritage, nature, and culture</p>
+  <main class="hero-carousel-shell">
+    <div id="destinationHeroCarousel" class="carousel slide carousel-fade hero-destination-carousel" data-bs-ride="carousel">
+      <div class="carousel-indicators hero-carousel-indicators">
+        <button type="button" data-bs-target="#destinationHeroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Dhaka"></button>
+        <button type="button" data-bs-target="#destinationHeroCarousel" data-bs-slide-to="1" aria-label="Tangail"></button>
+        <button type="button" data-bs-target="#destinationHeroCarousel" data-bs-slide-to="2" aria-label="Cox's Bazar"></button>
+        <button type="button" data-bs-target="#destinationHeroCarousel" data-bs-slide-to="3" aria-label="Sylhet"></button>
+        <button type="button" data-bs-target="#destinationHeroCarousel" data-bs-slide-to="4" aria-label="Rangamati"></button>
+        <button type="button" data-bs-target="#destinationHeroCarousel" data-bs-slide-to="5" aria-label="Bandarban"></button>
+      </div>
+
+      <div class="carousel-inner">
+        <div class="carousel-item active" data-destination="Dhaka" data-title="Heritage, architecture, and the rhythm of old and new Bangladesh" data-subtitle="From historic landmarks to unforgettable street food and riverfront stories.">
+          <div class="hero-slide-bg" style="background-image: linear-gradient(115deg, rgba(5, 16, 36, 0.84), rgba(7, 31, 61, 0.35) 45%, rgba(255, 152, 0, 0.14)), url('Assets/destinations/dhaka-hero.jpg');"></div>
+          <div class="container hero-carousel-content">
+            <div class="hero-copy-card">
+              <span class="hero-eyebrow" id="heroActiveDestination">Dhaka</span>
+              <h1 class="display-4 fw-bold text-white mb-3" id="heroActiveTitle">Heritage, architecture, and the rhythm of old and new Bangladesh</h1>
+              <p class="lead text-white mb-4" id="heroActiveSubtitle">From historic landmarks to unforgettable street food and riverfront stories.</p>
+              <div class="hero-action-row">
+                <button class="btn btn-primary btn-lg px-4" onclick="exploreDestination('Dhaka')">Explore Dhaka</button>
+                <a href="places.html?location=Dhaka" class="btn btn-outline-light btn-lg px-4">View Places</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-item" data-destination="Tangail" data-title="Mosques, forests, and quiet beauty beyond the busy cities" data-subtitle="A softer, greener side of Bangladesh with heritage and nature woven together.">
+          <div class="hero-slide-bg" style="background-image: linear-gradient(115deg, rgba(5, 16, 36, 0.86), rgba(13, 75, 50, 0.32) 45%, rgba(255, 205, 86, 0.10)), url('Assets/destinations/tangail-hero.jpg');"></div>
+          <div class="container hero-carousel-content">
+            <div class="hero-copy-card">
+              <span class="hero-eyebrow">Tangail</span>
+              <h2 class="display-4 fw-bold text-white mb-3">Mosques, forests, and quiet beauty beyond the busy cities</h2>
+              <p class="lead text-white mb-4">Discover heritage sites, riverside calm, and green escapes in Tangail.</p>
+              <div class="hero-action-row">
+                <button class="btn btn-primary btn-lg px-4" onclick="exploreDestination('Tangail')">Explore Tangail</button>
+                <a href="places.html?location=Tangail" class="btn btn-outline-light btn-lg px-4">View Places</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-item" data-destination="Cox's Bazar" data-title="Sea breeze, golden beaches, and dramatic coastal escapes" data-subtitle="The coastline everyone dreams about — from the main beach to scenic escapes nearby.">
+          <div class="hero-slide-bg" style="background-image: linear-gradient(115deg, rgba(4, 20, 40, 0.84), rgba(0, 123, 167, 0.26) 45%, rgba(255, 255, 255, 0.08)), url('Assets/destinations/coxs-bazar-hero.jpg');"></div>
+          <div class="container hero-carousel-content">
+            <div class="hero-copy-card">
+              <span class="hero-eyebrow">Cox's Bazar</span>
+              <h2 class="display-4 fw-bold text-white mb-3">Sea breeze, golden beaches, and dramatic coastal escapes</h2>
+              <p class="lead text-white mb-4">Explore beach sunsets, coral shores, and unforgettable Bay of Bengal views.</p>
+              <div class="hero-action-row">
+                <button class="btn btn-primary btn-lg px-4" onclick="exploreDestination(`Cox's Bazar`)">Explore Cox's Bazar</button>
+                <a href="places.html?location=Cox%27s%20Bazar" class="btn btn-outline-light btn-lg px-4">View Places</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-item" data-destination="Sylhet" data-title="Tea gardens, blue waters, and misty landscapes" data-subtitle="A destination for quiet romance, green hills, and some of the country’s prettiest scenery.">
+          <div class="hero-slide-bg" style="background-image: linear-gradient(115deg, rgba(5, 16, 36, 0.86), rgba(14, 95, 82, 0.28) 45%, rgba(120, 220, 180, 0.08)), url('Assets/destinations/sylhet-hero.jpg');"></div>
+          <div class="container hero-carousel-content">
+            <div class="hero-copy-card">
+              <span class="hero-eyebrow">Sylhet</span>
+              <h2 class="display-4 fw-bold text-white mb-3">Tea gardens, blue waters, and misty landscapes</h2>
+              <p class="lead text-white mb-4">From Ratargul to Lalakhal, Sylhet offers some of the freshest scenery in Bangladesh.</p>
+              <div class="hero-action-row">
+                <button class="btn btn-primary btn-lg px-4" onclick="exploreDestination('Sylhet')">Explore Sylhet</button>
+                <a href="places.html?location=Sylhet" class="btn btn-outline-light btn-lg px-4">View Places</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-item" data-destination="Rangamati" data-title="Hill lakes, bridges, and a calm escape into the Chittagong hills" data-subtitle="A place for boat rides, panoramic lake views, and slow, scenic travel.">
+          <div class="hero-slide-bg" style="background-image: linear-gradient(115deg, rgba(8, 18, 40, 0.86), rgba(72, 88, 150, 0.28) 45%, rgba(255, 176, 80, 0.10)), url('Assets/destinations/rangamati-hero.jpg');"></div>
+          <div class="container hero-carousel-content">
+            <div class="hero-copy-card">
+              <span class="hero-eyebrow">Rangamati</span>
+              <h2 class="display-4 fw-bold text-white mb-3">Hill lakes, bridges, and a calm escape into the Chittagong hills</h2>
+              <p class="lead text-white mb-4">Discover Kaptai Lake, hilltop views, and peaceful landscapes perfect for slowing down.</p>
+              <div class="hero-action-row">
+                <button class="btn btn-primary btn-lg px-4" onclick="exploreDestination('Rangamati')">Explore Rangamati</button>
+                <a href="places.html?location=Rangamati" class="btn btn-outline-light btn-lg px-4">View Places</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="carousel-item" data-destination="Bandarban" data-title="Cloud-kissed hills, waterfalls, and adventure in every direction" data-subtitle="For mountain roads, temples, waterfalls, and some of the boldest scenery in Bangladesh.">
+          <div class="hero-slide-bg" style="background-image: linear-gradient(115deg, rgba(5, 14, 28, 0.88), rgba(18, 82, 61, 0.26) 45%, rgba(164, 216, 122, 0.08)), url('Assets/destinations/bandarban-hero.jpg');"></div>
+          <div class="container hero-carousel-content">
+            <div class="hero-copy-card">
+              <span class="hero-eyebrow">Bandarban</span>
+              <h2 class="display-4 fw-bold text-white mb-3">Cloud-kissed hills, waterfalls, and adventure in every direction</h2>
+              <p class="lead text-white mb-4">A more adventurous Bangladesh — hilltops, temples, trekking routes, and waterfalls.</p>
+              <div class="hero-action-row">
+                <button class="btn btn-primary btn-lg px-4" onclick="exploreDestination('Bandarban')">Explore Bandarban</button>
+                <a href="places.html?location=Bandarban" class="btn btn-outline-light btn-lg px-4">View Places</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="carousel-control-prev hero-carousel-control" type="button" data-bs-target="#destinationHeroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next hero-carousel-control" type="button" data-bs-target="#destinationHeroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
     </div>
   </main>
 
@@ -355,6 +462,69 @@
     </div>
   </div>
 
+  <section class="destination-highlights-section py-5 d-none" id="destinationHighlightsSection">
+    <div class="container">
+      <div class="destination-highlights-header text-center mb-5">
+        <span class="section-kicker">Destination highlights</span>
+        <h2 class="fw-bold mb-2" id="destinationHighlightsTitle">Beautiful places in Dhaka</h2>
+        <p class="text-muted mb-0" id="destinationHighlightsSubtitle">Start with the capital and explore iconic places, heritage spots, and scenic corners worth visiting.</p>
+      </div>
+      <div class="row g-4" id="destinationPlacesGrid">
+        <div class="col-md-6 col-xl-4">
+          <article class="destination-place-card h-100">
+            <div class="destination-place-media">
+              <img src="https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1200&auto=format&fit=crop" alt="Lalbagh Fort">
+              <div class="destination-place-overlay"></div>
+              <span class="destination-place-badge heritage">Heritage</span>
+            </div>
+            <div class="destination-place-body">
+              <div class="destination-place-meta">
+                <span class="destination-place-location"><i class="bi bi-geo-alt-fill"></i> Old Dhaka</span>
+              </div>
+              <h3>Lalbagh Fort</h3>
+              <p>A timeless Mughal landmark that instantly makes Dhaka feel historic, dramatic, and worth exploring properly.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <article class="destination-place-card h-100">
+            <div class="destination-place-media">
+              <img src="https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1200&auto=format&fit=crop" alt="Ahsan Manzil">
+              <div class="destination-place-overlay"></div>
+              <span class="destination-place-badge heritage">Museum</span>
+            </div>
+            <div class="destination-place-body">
+              <div class="destination-place-meta">
+                <span class="destination-place-location"><i class="bi bi-geo-alt-fill"></i> Kumartoli, Old Dhaka</span>
+              </div>
+              <h3>Ahsan Manzil</h3>
+              <p>The famous Pink Palace on the riverfront — one of the most photogenic and recognizable places in Dhaka.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <article class="destination-place-card h-100">
+            <div class="destination-place-media">
+              <img src="https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=1200&auto=format&fit=crop" alt="National Parliament House">
+              <div class="destination-place-overlay"></div>
+              <span class="destination-place-badge heritage">Architecture</span>
+            </div>
+            <div class="destination-place-body">
+              <div class="destination-place-meta">
+                <span class="destination-place-location"><i class="bi bi-geo-alt-fill"></i> Sher-e-Bangla Nagar</span>
+              </div>
+              <h3>National Parliament House</h3>
+              <p>An architectural icon that gives the homepage a premium, modern Bangladesh feel right from the start.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="text-center mt-4" id="destinationViewAllWrap">
+        <a id="destinationViewAllLink" href="places.html?location=Dhaka" class="btn btn-outline-primary btn-lg">View all places in Dhaka</a>
+      </div>
+    </div>
+  </section>
+
   <!-- Tour Packages Section -->
   <section class="py-5">
     <div class="container">
@@ -593,7 +763,7 @@
           '<div class="col-12 text-center py-4"><div class="spinner-border text-primary"></div></div>';
         document.getElementById('homeViewAllWrap').classList.add('d-none');
         try {
-          const res  = await fetch(`${HOME_API}/nearby?location=${encodeURIComponent(location)}&limit=100`);
+          const res  = await fetch(`${HOME_API}/nearby?location=${encodeURIComponent(location)}`);
           if (!res.ok) throw new Error();
           const data = await res.json();
           homeRenderCards(data.places || [], location);
@@ -758,6 +928,7 @@
     integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
     crossorigin="anonymous"></script>
   <script src="./js/auth.js"></script>
+  <script src="./js/place-image-map.js"></script>
   <script src="./script.js"></script>
 
   <!-- Profile Modal -->
