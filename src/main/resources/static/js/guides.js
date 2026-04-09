@@ -1,15 +1,30 @@
 // Guides Search JavaScript (same pattern as flights.js / cars.js)
 const API_BASE_URL = "http://localhost:8080/api/guides";
+const FALLBACK_PLACES = [
+  "Dhaka",
+  "Cox's Bazar",
+  "Chittagong",
+  "Sylhet",
+  "Rangamati",
+  "Khulna",
+  "Rajshahi",
+  "Bandarban",
+  "Tangail",
+  "Mymensingh",
+  "Barishal",
+  "Rangpur"
+];
 
 let hasSearched = false;
 
 document.addEventListener("DOMContentLoaded", function () {
+  loadGuidePlaceSuggestions();
   showInitial();
 
   // Optional: read URL params for auto-search
-  // Example: guides.html?city=Dhaka&language=English
+  // Example: guides.html?city=Dhaka&language=English or guides.html?place=Dhaka
   const urlParams = new URLSearchParams(window.location.search);
-  const city = urlParams.get("city");
+  const city = urlParams.get("place") || urlParams.get("city");
   const language = urlParams.get("language");
 
   if (city) document.getElementById("cityInput").value = city;
@@ -19,6 +34,38 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => searchGuides(), 300);
   }
 });
+
+async function loadGuidePlaceSuggestions() {
+  const datalist = document.getElementById("guidePlaceSuggestions");
+  if (!datalist) return;
+
+  let places = [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/cities`);
+    if (response.ok) {
+      const apiPlaces = await response.json();
+      if (Array.isArray(apiPlaces)) {
+        places = apiPlaces.filter(Boolean);
+      }
+    }
+  } catch (error) {
+    console.warn("Could not load guide place suggestions from API.", error);
+  }
+
+  if (places.length === 0) {
+    places = FALLBACK_PLACES;
+  }
+
+  const uniqueSorted = [...new Set(places.map((item) => String(item).trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+
+  datalist.innerHTML = "";
+  uniqueSorted.forEach((place) => {
+    const option = document.createElement("option");
+    option.value = place;
+    datalist.appendChild(option);
+  });
+}
 
 document.getElementById("guideSearchForm").addEventListener("submit", function (e) {
   e.preventDefault();
@@ -62,7 +109,7 @@ async function searchGuides() {
   const language = document.getElementById("languageSelect").value;
 
   if (!city && !language) {
-    alert("Please enter a city or select a language");
+    alert("Please enter a place or select a language");
     return;
   }
 
@@ -162,11 +209,11 @@ function createGuideCard(guide) {
 
 // Hire guide -> open Google search (same idea as select flight/car)
 function hireGuide(guideId, encodedName) {
-  const city = document.getElementById("cityInput").value.trim();
+  const place = document.getElementById("cityInput").value.trim();
   const language = document.getElementById("languageSelect").value;
   const name = decodeURIComponent(encodedName || "");
 
-  const searchQuery = `hire travel guide ${name} ${city} ${language}`.trim();
+  const searchQuery = `hire travel guide ${name} ${place} ${language}`.trim();
   const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
 
   window.open(googleSearchUrl, "_blank");

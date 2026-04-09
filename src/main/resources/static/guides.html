@@ -163,8 +163,22 @@
           <form id="guideSearchForm">
             <div class="row g-3">
               <div class="col-md-4">
-                <label class="form-label">City</label>
-                <input type="text" id="cityInput" class="form-control" placeholder="Enter city" />
+                <label class="form-label">Place</label>
+                <input type="text" id="cityInput" class="form-control" placeholder="Enter place" list="guidePlaceSuggestions" autocomplete="off" />
+                <datalist id="guidePlaceSuggestions">
+                  <option value="Dhaka"></option>
+                  <option value="Cox's Bazar"></option>
+                  <option value="Chittagong"></option>
+                  <option value="Sylhet"></option>
+                  <option value="Rangamati"></option>
+                  <option value="Khulna"></option>
+                  <option value="Rajshahi"></option>
+                  <option value="Bandarban"></option>
+                  <option value="Tangail"></option>
+                  <option value="Mymensingh"></option>
+                  <option value="Barishal"></option>
+                  <option value="Rangpur"></option>
+                </datalist>
               </div>
 
               <div class="col-md-4">
@@ -197,7 +211,7 @@
             <span id="resultsCount">0</span> guides found
           </h2>
           <p class="text-center text-muted mb-0">
-            City: <span id="searchCity">-</span>
+            Place: <span id="searchCity">-</span>
             <span class="mx-2">&bull;</span>
             Language: <span id="searchLanguage">Any</span>
           </p>
@@ -207,7 +221,7 @@
         <div id="initialState" class="state-block active">
           <div class="state-message">
             <h3 class="fw-bold">Search for guides</h3>
-            <p>Enter a city and choose a language to see available guides.</p>
+            <p>Enter a place and choose a language to see available guides.</p>
           </div>
         </div>
 
