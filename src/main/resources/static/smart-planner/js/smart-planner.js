@@ -63,6 +63,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        if (request.durationDays > 5) {
+            showMessage('❌ Maximum duration is 5 days (you entered ' + request.durationDays + ' days)', 'error');
+            showLoading(false);
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = originalButtonText;
+            return;
+        }
+        
         console.log('📤 Submitting plan request:', request);
         console.log('🤖 Planning Engine:', planningEngine);
 

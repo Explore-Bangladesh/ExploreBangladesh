@@ -3,6 +3,7 @@ package com.TeamDeadlock.ExploreBangladesh.planner.service.impl;
 import com.TeamDeadlock.ExploreBangladesh.planner.dto.*;
 import com.TeamDeadlock.ExploreBangladesh.planner.entity.*;
 import com.TeamDeadlock.ExploreBangladesh.planner.repository.*;
+import com.TeamDeadlock.ExploreBangladesh.planner.service.OpenMeteoWeatherService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,9 @@ public class SmartPlannerServiceImplV2 {
     private final AttractionRepository attractionRepository;
     private final HotelRepository hotelRepository;
     private final RestaurantRepository restaurantRepository;
+    
+    // Weather service
+    private final OpenMeteoWeatherService weatherService;
 
     public EnhancedTravelPlanDTO generateSmartPlanPreview(SmartPlanRequest request, String userId) {
         // Input validation
@@ -40,8 +44,8 @@ public class SmartPlannerServiceImplV2 {
         if (request.getDestination() == null || request.getDestination().isBlank()) {
             throw new IllegalArgumentException("Destination cannot be empty");
         }
-        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 30) {
-            throw new IllegalArgumentException("Duration must be between 1 and 30 days, got: " + request.getDurationDays());
+        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 5) {
+            throw new IllegalArgumentException("Duration must be between 1 and 5 days, got: " + request.getDurationDays());
         }
         String budgetTier = request.getBudgetTier();
         if (budgetTier == null || budgetTier.isBlank()) {
@@ -151,8 +155,8 @@ public class SmartPlannerServiceImplV2 {
         if (request.getDestination() == null || request.getDestination().isBlank()) {
             throw new IllegalArgumentException("Destination cannot be empty");
         }
-        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 30) {
-            throw new IllegalArgumentException("Duration must be between 1 and 30 days");
+        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 5) {
+            throw new IllegalArgumentException("Duration must be between 1 and 5 days");
         }
         String budgetTier = request.getBudgetTier();
         if (budgetTier == null || budgetTier.isBlank()) {
@@ -280,8 +284,8 @@ public class SmartPlannerServiceImplV2 {
         if (request.getDestination() == null || request.getDestination().isBlank()) {
             throw new IllegalArgumentException("Destination cannot be empty");
         }
-        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 30) {
-            throw new IllegalArgumentException("Duration must be between 1 and 30 days");
+        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 5) {
+            throw new IllegalArgumentException("Duration must be between 1 and 5 days");
         }
         String budgetTier = request.getBudgetTier();
         if (budgetTier == null || budgetTier.isBlank()) {
@@ -449,8 +453,8 @@ public class SmartPlannerServiceImplV2 {
         if (request.getDestination() == null || request.getDestination().isBlank()) {
             throw new IllegalArgumentException("Destination cannot be empty");
         }
-        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 30) {
-            throw new IllegalArgumentException("Duration must be between 1 and 30 days");
+        if (request.getDurationDays() == null || request.getDurationDays() < 1 || request.getDurationDays() > 5) {
+            throw new IllegalArgumentException("Duration must be between 1 and 5 days");
         }
         String budgetTier = request.getBudgetTier();
         if (budgetTier == null || budgetTier.isBlank()) {
@@ -649,6 +653,17 @@ public class SmartPlannerServiceImplV2 {
         List<Attraction> remainingAttractions = new ArrayList<>(availableAttractions);
         Set<Long> usedAttractionIds = new HashSet<>();
         List<String> recentCategories = new ArrayList<>();
+        boolean noMoreAttractions = false;  // Flag to indicate when attractions are exhausted
+
+        // ═══════════════════════════════════════════════════════
+        // FETCH WEATHER FORECAST for all days
+        // ═══════════════════════════════════════════════════════
+        List<WeatherDTO> weatherForecast = weatherService.getWeatherForecast(
+            hotel.getLatitude(), 
+            hotel.getLongitude(), 
+            request.getDurationDays()
+        );
+        log.info("🌦️  Fetched weather forecast for {} days", weatherForecast.size());
 
         for (int day = 1; day <= request.getDurationDays(); day++) {
             EnhancedDailyItineraryDTO dailyPlan = new EnhancedDailyItineraryDTO();
@@ -663,7 +678,12 @@ public class SmartPlannerServiceImplV2 {
             boolean lunchScheduled = false;
 
             // ═══════════════════════════════════════════════════════
-            // BREAKFAST at Hotel (9:00-10:00)
+            // CHECK: If all attractions are exhausted (at start of day)
+            // ═══════════════════════════════════════════════════════
+            boolean attractionsExhaustedToday = usedAttractionIds.size() >= availableAttractions.size();
+
+            // ═══════════════════════════════════════════════════════
+            // BREAKFAST at Hotel (always 9:00-10:00 for consistency)
             // ═══════════════════════════════════════════════════════
             Restaurant breakfastRest = selectBreakfastRestaurant(mapDestinationToId(request.getDestination()));
             activities.add(createActivity(
@@ -677,12 +697,47 @@ public class SmartPlannerServiceImplV2 {
                 "Start your day with local cuisine",
                 "Hotel breakfast included"
             ));
+            // Ensure breakfast always ends at 10:00, regardless of day number or attractions
             currentTime = LocalTime.of(10, 0);
 
             // ═══════════════════════════════════════════════════════
-            // MORNING ACTIVITY (10:00-13:00 with travel time)
+            // CHECK: If all attractions are exhausted, show completion message
             // ═══════════════════════════════════════════════════════
-            if (!remainingAttractions.isEmpty()) {
+            if (attractionsExhaustedToday) {
+                // Calculate days with attractions and remaining days
+                int daysWithAttractions = day - 1;
+                int remainingDays = request.getDurationDays() - daysWithAttractions;
+                
+                log.info("✅ All {} attractions covered in {} days. Remaining days: {}", 
+                         usedAttractionIds.size(), daysWithAttractions, remainingDays);
+                
+                // Add completion message activity (10:00-17:00, after breakfast)
+                activities.add(createActivity(
+                    "No more attractions in our database to visit.\n" +
+                    "Make your own plan for remaining days.\n" +
+                    "Stay healthy.",
+                    "Info",
+                    "10:00",
+                    "17:00",
+                    hotel.getName(),
+                    hotel.getLatitude(),
+                    hotel.getLongitude(),
+                    "All planned activities completed!",
+                    "Enjoy free time or explore local recommendations."
+                ));
+                
+                // Set currentTime to 17:00 to continue with return to hotel
+                currentTime = LocalTime.of(17, 0);
+                
+                // Set flag to break after this day
+                noMoreAttractions = true;
+            }
+
+            // ═══════════════════════════════════════════════════════
+            // MORNING ACTIVITY (with travel time)
+            // Skip if all attractions are exhausted
+            // ═══════════════════════════════════════════════════════
+            if (!noMoreAttractions && !remainingAttractions.isEmpty()) {
                 // Find closest attraction to hotel
                 Attraction morningAttraction = findClosestAttraction(
                     currentLocation, remainingAttractions, usedAttractionIds, request.getDestination()
@@ -909,12 +964,36 @@ public class SmartPlannerServiceImplV2 {
             dailyPlan.setTheme(generateDayTheme(day, request));
             dailyPlan.setActivities(activities);
             dailyPlan.setTotalCostBdt(calculateDailyCost(activities));
-            dailyPlan.setWeatherForecast("⚠️ Real-time weather API not configured - Please integrate OpenWeather API or WeatherAPI");
+            
+            // ═══════════════════════════════════════════════════════
+            // SET WEATHER FORECAST for this day
+            // ═══════════════════════════════════════════════════════
+            if (day <= weatherForecast.size()) {
+                WeatherDTO dayWeather = weatherForecast.get(day - 1);
+                String weatherForDay = String.format(
+                    "%s | High: %d°C, Low: %d°C",
+                    dayWeather.getDescription(),
+                    (int) dayWeather.getTemperatureMax(),
+                    (int) dayWeather.getTemperatureMin()
+                );
+                dailyPlan.setWeatherForecast(weatherForDay);
+            } else {
+                dailyPlan.setWeatherForecast("⚠️ Weather data unavailable");
+            }
+            
             dailyPlan.setAccommodation(hotel.getName());
             dailyPlan.setAccommodationCost(calculateHotelCost(request));
             dailyPlan.setAdvisories(generateDayAdvisories(request.getTravelStyle()));
 
             dailyItineraries.add(dailyPlan);
+            
+            // ═══════════════════════════════════════════════════════
+            // If all attractions have been covered, stop generating more days
+            // ═══════════════════════════════════════════════════════
+            if (noMoreAttractions) {
+                log.info("🏁 Itinerary generation complete. Total days created: {}", dailyItineraries.size());
+                break;  // Exit the day loop after finishing the current day
+            }
         }
 
         return dailyItineraries;
@@ -1429,6 +1508,12 @@ public class SmartPlannerServiceImplV2 {
         // Conservative estimate: 35 km/h average
         double averageSpeedKmH = 35.0;
         double travelTimeHours = distanceKm / averageSpeedKmH;
+        
+        // Ensure minimum travel time of 5 minutes (0.083 hours) even for very close locations
+        double minTravelTimeHours = 0.083;  // 5 minutes minimum
+        if (travelTimeHours < minTravelTimeHours) {
+            travelTimeHours = minTravelTimeHours;
+        }
 
         log.debug("⏱️  Travel calculation: {:.1f} km / {:.0f} km/h = {:.2f} hours ({} mins)",
             distanceKm, averageSpeedKmH, travelTimeHours, Math.round(travelTimeHours * 60));

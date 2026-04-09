@@ -398,8 +398,9 @@ function displayDailyTimeline(plan) {
         const summaryDiv = document.createElement('div');
         summaryDiv.className = 'day-summary';
         
+        const weatherEmoji = getWeatherEmoji(day.weatherForecast || 'Sunny');
         const weatherSpan = document.createElement('span');
-        weatherSpan.textContent = `🌤️ ${day.weatherForecast || 'Sunny'} | 🏨 ${day.accommodation || 'Hotel'}`;
+        weatherSpan.textContent = `${weatherEmoji} ${day.weatherForecast || 'Sunny'} | 🏨 ${day.accommodation || 'Hotel'}`;
         
         const costSpan = document.createElement('span');
         costSpan.textContent = `💰 ৳ ${formatNumber(day.totalCostBdt || 0)}`;
@@ -413,6 +414,25 @@ function displayDailyTimeline(plan) {
         dayElement.appendChild(contentElement);
         container.appendChild(dayElement);
     });
+}
+
+/**
+ * Get appropriate weather emoji based on weather description
+ */
+function getWeatherEmoji(weatherDesc) {
+    const desc = (weatherDesc || '').toLowerCase();
+    
+    if (desc.includes('clear') || desc.includes('sunny')) return '☀️';
+    if (desc.includes('mostly') || desc.includes('partly')) return '🌤️';
+    if (desc.includes('overcast') || desc.includes('cloud')) return '☁️';
+    if (desc.includes('fog')) return '🌫️';
+    if (desc.includes('drizzle')) return '🌧️';
+    if (desc.includes('rain')) return '🌧️';
+    if (desc.includes('shower')) return '🌧️';
+    if (desc.includes('snow') || desc.includes('grain')) return '❄️';
+    if (desc.includes('thunder') || desc.includes('storm')) return '⛈️';
+    
+    return '🌤️'; // Default fallback
 }
 
 /**
