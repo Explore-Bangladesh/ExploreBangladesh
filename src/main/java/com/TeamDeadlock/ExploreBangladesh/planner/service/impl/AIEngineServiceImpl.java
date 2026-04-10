@@ -83,9 +83,8 @@ public class AIEngineServiceImpl implements AIEngineService {
             return plan;
 
         } catch (AIServiceUnavailableException e) {
-            // 503 Service Unavailable - Gracefully fall back to Standard Planner
-            String errorMsg = "AI service temporarily unavailable (503 Service Unavailable). Reason: " + e.getMessage();
-            log.warn("{}", errorMsg);
+            // AI service unavailable - Gracefully fall back to Standard Planner
+            log.warn("{}", e.getMessage());
             log.info("Falling back to Standard Planner for user: {}", userId);
             return fallbackToStandardPlanner(request, userId, e.getMessage());
             
@@ -129,12 +128,12 @@ public class AIEngineServiceImpl implements AIEngineService {
             aiPlan.setTransportationTips("Use local buses, ridesharing apps (Uber/Pathao), or private taxis");
             aiPlan.setLocalTravelTips("Learn basic Bengali phrases. Cash payment needed for local markets. Carry light clothing and sun protection.");
             
+            // Generate dynamic message based on error reason
+            String aiInsights = generateFallbackMessage(fallbackReason);
+            
             // Mark as generated using standard planner due to AI unavailability
             aiPlan.setPlanStatus("standard_planner");
-            aiPlan.setAiInsights(
-                "This plan was generated using our Standard Planner because the AI service is temporarily experiencing high demand (503 Service Unavailable). " +
-                "Your itinerary is complete and ready to use. Once the AI service is back online, you can regenerate this plan for AI-personalized insights and recommendations."
-            );
+            aiPlan.setAiInsights(aiInsights);
             aiPlan.setIsSaved(false);
             
             // Copy recommendations if available
@@ -197,6 +196,44 @@ public class AIEngineServiceImpl implements AIEngineService {
             String errorMsg = "Standard Planner also failed, cannot generate itinerary: " + e.getMessage();
             log.error("{}", errorMsg, e);
             throw new RuntimeException(errorMsg, e);
+        }
+    }
+    
+    /**
+     * Generate dynamic fallback message based on error reason
+     */
+    private String generateFallbackMessage(String fallbackReason) {
+        if (fallbackReason == null) {
+            fallbackReason = "";
+        }
+        
+        // Check error type and return appropriate message
+        if (fallbackReason.contains("429") || fallbackReason.contains("quota") || 
+            fallbackReason.contains("Quota") || fallbackReason.contains("RESOURCE_EXHAUSTED")) {
+            return "This plan was generated using our Standard Planner because the AI service has reached its usage quota. " +
+                   "Your itinerary is complete and ready to use. Please try the AI-powered option again after some time.";
+        } 
+        else if (fallbackReason.contains("503") || fallbackReason.contains("Service Unavailable") || 
+                 fallbackReason.contains("high demand")) {
+            return "This plan was generated using our Standard Planner because the AI service is experiencing high demand. " +
+                   "Your itinerary is complete and ready to use. Once the service is back online, you can regenerate for AI-personalized insights.";
+        }
+        else if (fallbackReason.contains("500") || fallbackReason.contains("Internal Server")) {
+            return "This plan was generated using our Standard Planner due to a temporary service issue. " +
+                   "Your itinerary is complete and ready to use. Please try regenerating with AI later.";
+        }
+        else if (fallbackReason.contains("502") || fallbackReason.contains("Bad Gateway")) {
+            return "This plan was generated using our Standard Planner due to a temporary connection issue. " +
+                   "Your itinerary is complete and ready to use. You can try the AI option again shortly.";
+        }
+        else if (fallbackReason.contains("504") || fallbackReason.contains("Gateway Timeout")) {
+            return "This plan was generated using our Standard Planner because the AI service is taking too long to respond. " +
+                   "Your itinerary is complete and ready to use. Please try again in a few moments.";
+        }
+        else {
+            // Default message
+            return "This plan was generated using our Standard Planner because the AI service is currently unavailable. " +
+                   "Your itinerary is complete and ready to use. You can try regenerating with AI later.";
         }
     }
 
@@ -309,8 +346,8 @@ public class AIEngineServiceImpl implements AIEngineService {
     }
 
     /**
-     * Call Google Gemini API with error handling
-     * Throws AIServiceUnavailableException on 503 errors (for graceful fallback)
+     * Call Google Gemini API with comprehensive error handling
+     * Throws AIServiceUnavailableException on temporary failures (for graceful fallback)
      */
     private String callGoogleGenAIAPI(String prompt) throws Exception {
         String url = GOOGLE_API_URL + "?key=" + googleGenAIApiKey;
@@ -342,9 +379,17 @@ public class AIEngineServiceImpl implements AIEngineService {
                 String errorMsg = (String) error.getOrDefault("message", "Unknown API error");
                 Object statusCode = error.get("code");
                 
-                // Check for 503 Service Unavailable
-                if (statusCode instanceof Integer && (Integer) statusCode == 503) {
-                    throw new AIServiceUnavailableException("AI service temporarily unavailable: " + errorMsg);
+                // Check for API errors that should trigger fallback
+                // 503 = Service Unavailable
+                // 429 = Quota/Rate Limit Exceeded
+                // 500 = Internal Server Error
+                // 502 = Bad Gateway
+                // 504 = Gateway Timeout
+                if (statusCode instanceof Integer) {
+                    int code = (Integer) statusCode;
+                    if (code == 503 || code == 429 || code == 500 || code == 502 || code == 504) {
+                        throw new AIServiceUnavailableException("API Error Code " + code + ": " + errorMsg);
+                    }
                 }
                 
                 throw new RuntimeException("Google API Error: " + errorMsg);
@@ -373,18 +418,33 @@ public class AIEngineServiceImpl implements AIEngineService {
             return (String) partsList.get(0).get("text");
 
         } catch (HttpServerErrorException e) {
-            // Catch HTTP 5xx errors specifically
-            if (e.getStatusCode().value() == 503) {
-                String responseBody = e.getResponseBodyAsString();
-                log.warn("Google Gemini API returned 503: {}", responseBody);
-                throw new AIServiceUnavailableException("Google Gemini API is experiencing high demand. Status: 503 Service Unavailable. " +
-                        "Response: " + responseBody);
+            // Catch HTTP 5xx and rate limit errors
+            int statusCode = e.getStatusCode().value();
+            String responseBody = e.getResponseBodyAsString();
+            
+            // Check if this is a rate limit or temporary API error
+            if (statusCode == 503 || statusCode == 429 || statusCode == 500 || statusCode == 502 || statusCode == 504) {
+                log.warn("Google Gemini API returned error (Status {}): {}", statusCode, responseBody);
+                // Extract error message from response if available
+                try {
+                    JsonNode errorNode = objectMapper.readTree(responseBody);
+                    String errorMsg = errorNode.path("error").path("message").asText("Service temporarily unavailable");
+                    throw new AIServiceUnavailableException("API Error " + statusCode + ": " + errorMsg);
+                } catch (Exception parseError) {
+                    throw new AIServiceUnavailableException("API Error " + statusCode + ": " + responseBody);
+                }
             }
+            // For other HTTP errors, throw as-is
             throw e;
         } catch (AIServiceUnavailableException e) {
             // Re-throw our custom exception for fallback handling
             throw e;
         } catch (Exception e) {
+            // Check for rate limit in exception message
+            if (e.getMessage() != null && (e.getMessage().contains("429") || e.getMessage().contains("Too Many Requests") || 
+                e.getMessage().contains("quota") || e.getMessage().contains("RESOURCE_EXHAUSTED"))) {
+                throw new AIServiceUnavailableException("API Rate Limit Exceeded: " + e.getMessage());
+            }
             if (e.getMessage() != null && e.getMessage().contains("401")) {
                 throw new RuntimeException("Invalid API key - Authentication failed with Google Gemini");
             }
