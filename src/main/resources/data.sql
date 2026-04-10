@@ -234,6 +234,58 @@ INSERT INTO hotels (destination_id, name, description, address, latitude, longit
 (6, 'Hill Tribal Resort Bandarban', '3-star resort with tribal cultural experience', 'Bandarban City', 21.9500, 92.2400, 3, '+88-0361-61111', 'info@tribalresort.com', 'www.tribalresort.com', 3500, 5500, 9000, 'Cultural Programs, Restaurant, WiFi, Valley Views', 4.2, 167, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ==========================================
+-- ADD MISSING BUDGET HOTELS (economy_price_bdt <= 3000)
+-- ==========================================
+
+-- DHAKA (need 2)
+INSERT INTO hotels (destination_id, name, description, address, latitude, longitude, star_rating, phone, email, website, economy_price_bdt, midrange_price_bdt, luxury_price_bdt, amenities, average_rating, review_count, created_at, updated_at) VALUES
+(1, 'Budget Inn Dhaka', 'Affordable budget hotel near airport with clean rooms', 'Motijheel, Dhaka', 23.7700, 90.4000, 3, '+88-02-48888888', 'info@budgetinn.com', 'www.budgetinn.com', 2800, 4500, 7000, 'WiFi, AC, Basic Restaurant', 3.8, 234, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'City Comfort Hotel', 'Economy hotel in city center with basic amenities', 'Kawran Bazar, Dhaka', 23.7600, 90.4000, 3, '+88-02-77778888', 'info@citycomfort.com', 'www.citycomfort.com', 2500, 4000, 6500, 'WiFi, AC, Restaurant, 24hr Service', 4.0, 189, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- COX'S BAZAR (need 2)
+(2, 'Beach Budget Hotel', 'Simple beachfront budget hotel with sea breeze', 'Cox''s Bazar Beach', 21.4250, 91.9700, 3, '+88-0341-519000', 'info@beachbudget.com', 'www.beachbudget.com', 2700, 4200, 6800, 'Beach Access, WiFi, Basic Restaurant', 3.9, 156, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'Traveler''s Lodge Cox''s', 'Budget traveler hostel and rooms near beach', 'Cox''s Bazar', 21.4300, 91.9700, 2, '+88-0341-520000', 'info@travelerlodge.com', 'www.travelerlodge.com', 1800, 3000, 5000, 'WiFi, AC, Shared Facilities', 3.7, 198, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- SYLHET (need 1)
+(3, 'Sreemangal Budget Inn', 'Budget accommodation in tea garden area', 'Sreemangal, Sylhet', 24.3000, 91.7200, 3, '+88-08612-52000', 'info@sreemangal-budget.com', 'www.sreemangal-budget.com', 2200, 3500, 5500, 'WiFi, AC, Restaurant, Garden View', 3.9, 145, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- CHITTAGONG (need 1)
+(4, 'City Economy Hotel', 'Budget hotel in Chittagong downtown', 'Agrabad, Chittagong', 22.3500, 91.8200, 3, '+88-031-2311111', 'info@cityeconomy.com', 'www.cityeconomy.com', 2600, 4000, 6200, 'WiFi, AC, Restaurant, 24hr Service', 3.8, 167, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- KHULNA (need 2)
+(5, 'Khulna Budget House', 'Simple budget hotel near city center', 'Khulna', 22.8456, 89.5644, 3, '+88-041-705000', 'info@khulnabudget.com', 'www.khulnabudget.com', 2400, 3800, 6000, 'WiFi, AC, Restaurant', 3.7, 134, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'Gateway Budget Inn', 'Affordable inn near Sundarbans gateway', 'Khulna', 22.8400, 89.5600, 3, '+88-041-706000', 'info@gatewaybudget.com', 'www.gatewaybudget.com', 2300, 3600, 5800, 'WiFi, AC, Restaurant, Nature Tours', 3.8, 121, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- BANDARBAN (need 2)
+(6, 'Hill Budget Resort', 'Economy resort in mountain setting', 'Bandarban', 21.9500, 92.2400, 3, '+88-0361-63000', 'info@hillbudget.com', 'www.hillbudget.com', 2200, 3500, 5500, 'WiFi, AC, Restaurant, Mountain View', 3.8, 145, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 'Tribal Budget Homestay', 'Budget homestay with tribal experience', 'Bandarban', 21.9400, 92.2300, 2, '+88-0361-64000', 'info@tribalhomestay.com', 'www.tribalhomestay.com', 1500, 2800, 4500, 'WiFi, AC, Tribal Meals, Cultural Activities', 4.0, 156, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- ==========================================
+-- ADD MISSING 5-STAR LUXURY HOTELS (star_rating = 5)
+-- ==========================================
+
+-- COX'S BAZAR (need 2)
+INSERT INTO hotels (destination_id, name, description, address, latitude, longitude, star_rating, phone, email, website, economy_price_bdt, midrange_price_bdt, luxury_price_bdt, amenities, average_rating, review_count, created_at, updated_at) VALUES
+(2, 'Cox''s Bazar Palace Resort', 'Ultimate 5-star luxury beachfront resort with world-class facilities', 'Cox''s Bazar Beach', 21.4272, 91.9700, 5, '+88-0341-521000', 'luxury@coxpalace.com', 'www.coxpalace.com', 20000, 28000, 40000, 'Private Beach, Pool, Spa, Multiple Restaurants, Water Sports', 4.9, 456, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'Dolphin Bay Luxury Resort', '5-star eco-luxury resort with dolphin viewing and marine activities', 'Cox''s Bazar', 21.4300, 91.9750, 5, '+88-0341-522000', 'info@dolphinbay.com', 'www.dolphinbay.com', 18000, 25000, 38000, 'Eco-Friendly, Pool, Spa, Restaurant, Dolphin Tours', 4.8, 378, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- SYLHET (need 2)
+(3, 'Tea Garden Palace Sylhet', '5-star luxury resort nestled in tea plantations', 'Sreemangal, Sylhet', 24.3000, 91.7200, 5, '+88-08612-53000', 'luxury@teapalace.com', 'www.teapalace.com', 15000, 22000, 35000, 'Tea Tour, Pool, Spa, Fine Dining, Nature Activities', 4.8, 345, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'Sylhet Grand Luxury Hotel', '5-star hotel in Sylhet city with premium amenities', 'Sylhet Downtown', 24.8949, 91.8734, 5, '+88-0821-720000', 'info@sylhetgrand.com', 'www.sylhetgrand.com', 14000, 20000, 32000, 'Pool, Spa, Multiple Restaurants, Business Center, Conference Halls', 4.7, 298, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- CHITTAGONG (need 2)
+(4, 'Chittagong Waterfront Palace', '5-star luxury hotel overlooking Bay of Bengal', 'Chittagong Waterfront', 22.3569, 91.8100, 5, '+88-031-2320000', 'luxury@waterfront.com', 'www.chittagongpalace.com', 16000, 23000, 36000, 'Marina View, Pool, Spa, Fine Dining, Yacht Facilities', 4.8, 367, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'Rangamati Hill Luxury Resort', '5-star resort with hill and lake views near Chittagong', 'Rangamati, Chittagong', 22.6500, 92.5000, 5, '+88-031-2321000', 'info@rangamatiresort.com', 'www.rangamatiresort.com', 13000, 19000, 30000, 'Lake View, Pool, Spa, Adventure Activities, Restaurant', 4.7, 267, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- KHULNA (need 2)
+(5, 'Sundarbans Royal Palace', '5-star luxury lodge as gateway to Sundarbans', 'Khulna', 22.8456, 89.5644, 5, '+88-041-707000', 'luxury@sundarbanpalace.com', 'www.sundarbanpalace.com', 17000, 25000, 38000, 'Safari Packages, Pool, Spa, Premium Restaurant, Wildlife Tours', 4.9, 412, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'Khulna Grand Resort', '5-star resort in Khulna with nature-oriented luxury', 'Khulna', 22.8500, 89.5700, 5, '+88-041-708000', 'info@khulnagrand.com', 'www.khulnagrand.com', 14000, 20000, 33000, 'Nature Tours, Pool, Spa, Restaurant, Conference Facilities', 4.7, 289, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- BANDARBAN (need 2)
+(6, 'Bandarban Mountain Palace', '5-star luxury resort in scenic hill tracts', 'Bandarban', 21.9500, 92.2400, 5, '+88-0361-65000', 'luxury@mountainpalace.com', 'www.mountainpalace.com', 15000, 22000, 34000, 'Mountain View, Pool, Spa, Tribal Tours, Adventure Activities', 4.8, 334, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 'Hill Tracts Royal Resort', '5-star eco-luxury resort with tribal cultural programs', 'Bandarban', 21.9400, 92.2300, 5, '+88-0361-66000', 'info@hilltracts-royal.com', 'www.hilltracts-royal.com', 14000, 20000, 32000, 'Cultural Programs, Pool, Spa, Jungle Treks, Restaurant', 4.8, 312, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- ==========================================
 -- 4. RESTAURANTS (32 restaurants, all price ranges)
 -- ==========================================
 
