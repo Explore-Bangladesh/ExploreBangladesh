@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpServerErrorException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -34,152 +35,20 @@ public class AIEngineServiceImpl implements AIEngineService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final SmartPlannerServiceImplV2 smartPlannerService;
 
     @Value("${spring.ai.google.genai.api-key:}")
     private String googleGenAIApiKey;
 
     private static final String GOOGLE_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-    
-    // Destination-based attractions (no database needed - pure config)
-    private static final Map<String, List<String>> DESTINATION_ATTRACTIONS = buildAttractionMap();
-
-    private static Map<String, List<String>> buildAttractionMap() {
-        Map<String, List<String>> map = new HashMap<>();
-        
-        // DHAKA
-        map.put("dhaka", Arrays.asList(
-            "Lalbagh Fort (4.5, 2h, 100 BDT) - Historical",
-            "Ahsan Manzil (4.4, 1.5h, 100 BDT) - Historical",
-            "National Museum (4.3, 2.5h, 50 BDT) - Museum",
-            "Star Mosque (4.2, 1h, Free) - Religious",
-            "Bangladesh National Zoo (4.1, 3h, 100 BDT) - Wildlife",
-            "Hatirjheel Lake (4.3, 1.5h, Free) - Recreation",
-            "Old Dhaka Walking Tour (4.4, 2h, Free) - Cultural",
-            "Sundarbans National Park (4.6, 1 day, 2500 BDT) - Nature",
-            "Buriganga River Cruise (4.2, 2h, 300 BDT) - Recreation"
-        ));
-        
-        // COX'S BAZAR
-        map.put("cox's bazar", Arrays.asList(
-            "Cox's Bazar Beach (4.7, Flexible, Free) - Beach",
-            "Himchari Waterfall (4.5, 2h, 50 BDT) - Nature",
-            "Inani Beach (4.4, 2h, Free) - Beach",
-            "Maheshkhali Island (4.3, 4h, 200 BDT) - Island",
-            "Saint Martin Island (4.6, 1 day, 800 BDT) - Beach",
-            "Ramu Buddhist Temple (4.3, 1.5h, Free) - Religious",
-            "Sundarban Tour (4.5, 1 day, 3000 BDT) - Nature"
-        ));
-        
-        // SYLHET
-        map.put("sylhet", Arrays.asList(
-            "Jaflong (4.6, 3h, Free) - Nature",
-            "Ratargul Swamp Forest (4.5, 2h, 150 BDT) - Forest",
-            "Lalakhal (4.4, 1.5h, Free) - Lake",
-            "Bisnakandi (4.5, 2h, Free) - Springs",
-            "Khasi Tribe Village (4.4, 2h, Free) - Cultural",
-            "Tamabil Tea Garden (4.3, 2.5h, Free) - Nature",
-            "Srimangal (4.5, 1 day, Free) - Tea Gardens"
-        ));
-        
-        // CHITTAGONG
-        map.put("chittagong", Arrays.asList(
-            "Six Domed Mosque (4.4, 1.5h, Free) - Religious",
-            "Foy's Lake (4.3, 1.5h, Free) - Recreation",
-            "Chittagong Zoo (4.2, 3h, 100 BDT) - Wildlife",
-            "Patenga Beach (4.5, 2h, Free) - Beach",
-            "War Cemetery (4.2, 1h, Free) - Historical",
-            "Rajshahi Silk Factory (4.5, 2h, Free) - Cultural"
-        ));
-        
-        // KHULNA
-        map.put("khulna", Arrays.asList(
-            "Sundarbans National Park (4.6, 1 day, 2500 BDT) - Nature",
-            "Khulna Museum (4.2, 2h, 50 BDT) - Museum",
-            "Nine Domed Mosque (4.3, 1h, Free) - Religious",
-            "Shait Gumbaz Mosque (4.4, 1h, Free) - Religious"
-        ));
-        
-        // RAJSHAHI
-        map.put("rajshahi", Arrays.asList(
-            "Rajshahi Silk Museum (4.5, 2h, 100 BDT) - Museum",
-            "Varendra Museum (4.3, 2h, 50 BDT) - Museum",
-            "Padma River Tour (4.4, 2h, Free) - Recreation",
-            "Puthia (4.5, 3h, Free) - Historical"
-        ));
-        
-        // RANGPUR
-        map.put("rangpur", Arrays.asList(
-            "Rangpur Fort (4.3, 2h, 50 BDT) - Historical",
-            "Curzon Hall (4.2, 1h, Free) - Historical",
-            "Rangpur Museum (4.4, 1.5h, Free) - Museum"
-        ));
-        
-        // KUAKATA
-        map.put("kuakata", Arrays.asList(
-            "Kuakata Beach (4.6, Flexible, Free) - Beach",
-            "Sudkanya Beach (4.5, 2h, Free) - Beach",
-            "Laboni Point (4.4, 1.5h, Free) - Beach",
-            "Fisherman Village (4.3, 2h, Free) - Cultural",
-            "Buddhist Temple (4.3, 1h, Free) - Religious",
-            "Hill Tracks (4.4, 3h, Free) - Nature",
-            "Saint Martin Island (4.5, 1 day, 800 BDT) - Island"
-        ));
-        
-        // BARISAL
-        map.put("barisal", Arrays.asList(
-            "Barisal Floating Market (4.5, 3h, Free) - Market",
-            "Sundarbans Tour (4.6, 1 day, 2500 BDT) - Nature",
-            "Swat River (4.4, 2h, Free) - River",
-            "Kirtonkhola River (4.3, 2h, Free) - River",
-            "Tentulia Bridge (4.4, 1.5h, Free) - Historical"
-        ));
-        
-        // MYMENSINGH
-        map.put("mymensingh", Arrays.asList(
-            "Botanical Garden (4.4, 2.5h, 50 BDT) - Garden",
-            "Mymensingh Agricultural University (4.3, 2h, Free) - Educational",
-            "Shoshimpur Mosque (4.3, 1h, Free) - Religious",
-            "Kewzar Lake (4.4, 1.5h, Free) - Recreation"
-        ));
-        
-        return map;
-    }
-
-    /**
-     * Get formatted attractions for a specific destination
-     */
-    private String getFormattedAttractionsForDestination(String destination) {
-        String key = destination.toLowerCase().trim();
-        
-        // Get attractions for this destination, or return generic list
-        List<String> attractions = DESTINATION_ATTRACTIONS.getOrDefault(key, 
-            DESTINATION_ATTRACTIONS.getOrDefault("dhaka", new ArrayList<>()));
-        
-        if (attractions.isEmpty()) {
-            // Return generic format if destination not found
-            return String.format("""
-                %s:
-                - Historic or Cultural Attraction (Rating: 4.4, Entry: 100-200 BDT, Duration: 2h)
-                - Nature or Recreation Site (Rating: 4.5, Entry: Free-100 BDT, Duration: 2-3h)
-                - Beach or Mountain (Rating: 4.6, Entry: Free, Duration: 3-4h)
-                """, destination);
-        }
-        
-        // Format attractions nicely
-        StringBuilder sb = new StringBuilder();
-        sb.append(destination.toUpperCase()).append(":\n");
-        for (String attraction : attractions) {
-            sb.append("- ").append(attraction).append("\n");
-        }
-        return sb.toString();
-    }
 
     /**
      * Generate AI-powered intelligent travel plan
+     * Falls back to Standard Planner if AI service is unavailable (503 error)
      * 
      * @param request User's travel request (destination, duration, budget, style)
      * @param userId User identifier
-     * @return AI-generated travel plan with hourly breakdown
+     * @return AI-generated or Standard travel plan
      */
     @Override
     public AIGeneratedPlanDTO generateAIPoweredPlan(SmartPlanRequest request, String userId) {
@@ -191,7 +60,8 @@ public class AIEngineServiceImpl implements AIEngineService {
             if (googleGenAIApiKey == null || googleGenAIApiKey.trim().isEmpty()) {
                 String error = "Google Gemini API key not configured in application.properties";
                 log.error("AI engine failed due to: {}", error);
-                throw new RuntimeException("AI engine failed due to: " + error);
+                log.info("Falling back to Standard Planner for user: {}", userId);
+                return fallbackToStandardPlanner(request, userId, error);
             }
 
             // Step 1: Build intelligent prompt
@@ -204,10 +74,21 @@ public class AIEngineServiceImpl implements AIEngineService {
             // Step 3: Parse response into structured DTOs
             log.info("Parsing AI response...");
             AIGeneratedPlanDTO plan = parseAIResponse(aiResponse, request, userId);
+            
+            // Mark as AI generated
+            plan.setPlanStatus("ai_generated");
+            plan.setAiInsights((plan.getAiInsights() != null ? plan.getAiInsights() : "AI-generated intelligent travel plan"));
 
             log.info("Plan generation completed successfully! Plan ID: {}", plan.getPlanId());
             return plan;
 
+        } catch (AIServiceUnavailableException e) {
+            // 503 Service Unavailable - Gracefully fall back to Standard Planner
+            String errorMsg = "AI service temporarily unavailable (503 Service Unavailable). Reason: " + e.getMessage();
+            log.warn("{}", errorMsg);
+            log.info("Falling back to Standard Planner for user: {}", userId);
+            return fallbackToStandardPlanner(request, userId, e.getMessage());
+            
         } catch (IllegalArgumentException e) {
             String errorMsg = "AI engine failed due to: Invalid input - " + e.getMessage();
             log.error("{}", errorMsg);
@@ -220,27 +101,123 @@ public class AIEngineServiceImpl implements AIEngineService {
     }
 
     /**
-     * Build intelligent prompt for Gemini API with dynamic attractions
+     * Fallback to Standard Planner when AI service is unavailable
+     * Generates a complete itinerary using SmartPlannerServiceImplV2
+     */
+    private AIGeneratedPlanDTO fallbackToStandardPlanner(SmartPlanRequest request, String userId, String fallbackReason) {
+        try {
+            log.info("Generating plan using Standard Planner as fallback for user: {} due to: {}", userId, fallbackReason);
+            
+            // Call SmartPlannerServiceImplV2 to generate standard plan (full itinerary)
+            EnhancedTravelPlanDTO standardPlan = smartPlannerService.generateSmartPlanPreview(request, userId);
+            
+            // Convert to AIGeneratedPlanDTO
+            AIGeneratedPlanDTO aiPlan = new AIGeneratedPlanDTO();
+            aiPlan.setUserId(userId);
+            aiPlan.setDestination(standardPlan.getDestination());
+            aiPlan.setDurationDays(standardPlan.getDurationDays());
+            aiPlan.setBudgetTier(standardPlan.getBudgetTier());
+            aiPlan.setTravelStyle(standardPlan.getTravelStyle());
+            aiPlan.setStartDate(request.getStartDate() != null ? request.getStartDate() : LocalDate.now());
+            aiPlan.setEndDate(aiPlan.getStartDate().plusDays(request.getDurationDays() - 1));
+            aiPlan.setEstimatedBudget(new BigDecimal(calculateEstimatedBudget(request.getBudgetTier(), request.getDurationDays())));
+            
+            // Set info from standard plan
+            aiPlan.setWeatherInfo("Check local weather forecast for your destination");
+            aiPlan.setBestTimeToVisit("October to March for most destinations (cool and dry)");
+            aiPlan.setAccommodation("Mid-range hotels and guesthouses available at reasonable prices");
+            aiPlan.setTransportationTips("Use local buses, ridesharing apps (Uber/Pathao), or private taxis");
+            aiPlan.setLocalTravelTips("Learn basic Bengali phrases. Cash payment needed for local markets. Carry light clothing and sun protection.");
+            
+            // Mark as generated using standard planner due to AI unavailability
+            aiPlan.setPlanStatus("standard_planner");
+            aiPlan.setAiInsights(
+                "This plan was generated using our Standard Planner because the AI service is temporarily experiencing high demand (503 Service Unavailable). " +
+                "Your itinerary is complete and ready to use. Once the AI service is back online, you can regenerate this plan for AI-personalized insights and recommendations."
+            );
+            aiPlan.setIsSaved(false);
+            
+            // Copy recommendations if available
+            if (standardPlan.getSuggestedRestaurants() != null && !standardPlan.getSuggestedRestaurants().isEmpty()) {
+                List<String> restaurantNames = new ArrayList<>();
+                for (RestaurantDTO rest : standardPlan.getSuggestedRestaurants()) {
+                    restaurantNames.add(rest.getName());
+                }
+                aiPlan.setRecommendedRestaurants(restaurantNames);
+            }
+            
+            if (standardPlan.getPlannedAttractions() != null && !standardPlan.getPlannedAttractions().isEmpty()) {
+                List<String> attractionNames = new ArrayList<>();
+                for (AttractionDTO attr : standardPlan.getPlannedAttractions()) {
+                    attractionNames.add(attr.getName());
+                }
+                aiPlan.setRecommendedAttractions(attractionNames);
+            }
+            
+            // Convert daily itineraries
+            if (standardPlan.getDailyItineraries() != null && !standardPlan.getDailyItineraries().isEmpty()) {
+                List<AIDailyItineraryDTO> aiBriefItineraries = new ArrayList<>();
+                for (EnhancedDailyItineraryDTO day : standardPlan.getDailyItineraries()) {
+                    AIDailyItineraryDTO aiDay = new AIDailyItineraryDTO();
+                    aiDay.setDayNumber(day.getDayNumber());
+                    aiDay.setDate(aiPlan.getStartDate().plusDays(day.getDayNumber() - 1));
+                    aiDay.setDayTitle(day.getTheme() != null ? ("Day " + day.getDayNumber() + ": " + day.getTheme()) : ("Day " + day.getDayNumber()));
+                    aiDay.setSummary(day.getSummary() != null ? day.getSummary() : "");
+                    aiDay.setWeatherExpectation(day.getWeatherForecast() != null ? day.getWeatherForecast() : "");
+                    aiDay.setEstimatedDailyBudget(day.getTotalCostBdt() != null ? new BigDecimal(day.getTotalCostBdt()) : new BigDecimal(0));
+                    
+                    // Copy activities if available
+                    if (day.getActivities() != null && !day.getActivities().isEmpty()) {
+                        List<AIHourlyActivityDTO> aiActivities = new ArrayList<>();
+                        int order = 1;
+                        for (EnhancedItineraryActivityDTO activity : day.getActivities()) {
+                            AIHourlyActivityDTO aiActivity = new AIHourlyActivityDTO();
+                            aiActivity.setActivityName(activity.getActivityName());
+                            aiActivity.setActivityType(activity.getType());
+                            aiActivity.setDescription(activity.getDescription());
+                            aiActivity.setLocation(activity.getLocation());
+                            aiActivity.setEstimatedCost(activity.getCostBdt() != null ? new BigDecimal(activity.getCostBdt()) : new BigDecimal(0));
+                            aiActivity.setStartTime(activity.getStartTime());
+                            aiActivity.setEndTime(activity.getEndTime());
+                            aiActivity.setVisitationOrder(order++);
+                            aiActivities.add(aiActivity);
+                        }
+                        aiDay.setActivities(aiActivities);
+                    }
+                    
+                    aiBriefItineraries.add(aiDay);
+                }
+                aiPlan.setDailyItineraries(aiBriefItineraries);
+            }
+            
+            log.info("Standard Planner fallback completed successfully for user: {} with full itinerary", userId);
+            return aiPlan;
+            
+        } catch (Exception e) {
+            String errorMsg = "Standard Planner also failed, cannot generate itinerary: " + e.getMessage();
+            log.error("{}", errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
+    }
+
+    /**
+     * Build intelligent prompt for Gemini API
+     * Uses AI's knowledge of real Bangladesh attractions instead of hardcoded lists
      */
     private String buildIntelligentPrompt(SmartPlanRequest request) {
         String destination = request.getDestination();
-        String attractions = getFormattedAttractionsForDestination(destination);
         
         return String.format("""
             You are an expert travel consultant specializing in Bangladesh tourism. Your task is to create 
             a COMPLETE, DETAILED, and INTELLIGENT %d-day travel itinerary for %s with hourly breakdown.
             
-            ═══════════════════════════════════════════════════════════════════════════════════════
             USER PROFILE:
-            ═══════════════════════════════════════════════════════════════════════════════════════
             • Destination: %s
             • Duration: %d days
             • Budget Tier: %s
             • Travel Style: %s
             
-            ═══════════════════════════════════════════════════════════════════════════════════════
             DAILY SCHEDULE TEMPLATE (MUST FOLLOW FOR EVERY DAY):
-            ═══════════════════════════════════════════════════════════════════════════════════════
             08:00-09:00 | Breakfast at hotel
             09:00-12:00 | Morning activity (includes 15-30 min travel time)
             12:00-13:30 | Lunch at restaurant
@@ -249,14 +226,11 @@ public class AIEngineServiceImpl implements AIEngineService {
             19:00-20:30 | Dinner at restaurant
             20:30-22:00 | Evening relaxation / shopping
             
-            ═══════════════════════════════════════════════════════════════════════════════════════
-            AVAILABLE ATTRACTIONS (Choose from these - NO duplicates across days):
-            ═══════════════════════════════════════════════════════════════════════════════════════
-            %s
+            ATTRACTIONS:
+            Use your knowledge of real Bangladesh attractions near %s. Suggest authentic, popular attractions
+            that actually exist and match the destination. Avoid duplicate attractions across different days.
             
-            ═══════════════════════════════════════════════════════════════════════════════════════
             CRITICAL RULES:
-            ═══════════════════════════════════════════════════════════════════════════════════════
             1. NO duplicate attractions across different days
             2. Return to hotel by 18:00 every day WITHOUT FAIL
             3. Times in 24-hour format (08:00, 14:30, 19:45)
@@ -267,9 +241,7 @@ public class AIEngineServiceImpl implements AIEngineService {
                - Midrange: 5,000-7,500 BDT/day total
                - Luxury: 10,000+ BDT/day total
             
-            ═══════════════════════════════════════════════════════════════════════════════════════
             RETURN ONLY VALID JSON (no markdown, no code blocks):
-            ═══════════════════════════════════════════════════════════════════════════════════════
             
             {
               "destination": "%s",
@@ -277,7 +249,7 @@ public class AIEngineServiceImpl implements AIEngineService {
               "budgetTier": "%s",
               "travelStyle": "%s",
               "estimatedBudget": %d,
-              "aiInsights": "2-3 paragraph analysis of %s",
+              "aiInsights": "5-7 short bullet points (each 1 sentence max) about %s. Format as • point1 • point2 • point3 etc.",
               "weatherInfo": "Expected weather conditions during your visit",
               "bestTimeToVisit": "Best months to visit",
               "accommodations": "Hotel and lodging recommendations",
@@ -324,7 +296,7 @@ public class AIEngineServiceImpl implements AIEngineService {
             request.getDurationDays(),
             request.getBudgetTier(),
             request.getTravelStyle(),
-            attractions,
+            destination,
             destination,
             request.getDurationDays(),
             request.getBudgetTier(),
@@ -337,7 +309,8 @@ public class AIEngineServiceImpl implements AIEngineService {
     }
 
     /**
-     * Call Google Gemini API
+     * Call Google Gemini API with error handling
+     * Throws AIServiceUnavailableException on 503 errors (for graceful fallback)
      */
     private String callGoogleGenAIAPI(String prompt) throws Exception {
         String url = GOOGLE_API_URL + "?key=" + googleGenAIApiKey;
@@ -367,6 +340,13 @@ public class AIEngineServiceImpl implements AIEngineService {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> error = (Map<String, Object>) response.get("error");
                 String errorMsg = (String) error.getOrDefault("message", "Unknown API error");
+                Object statusCode = error.get("code");
+                
+                // Check for 503 Service Unavailable
+                if (statusCode instanceof Integer && (Integer) statusCode == 503) {
+                    throw new AIServiceUnavailableException("AI service temporarily unavailable: " + errorMsg);
+                }
+                
                 throw new RuntimeException("Google API Error: " + errorMsg);
             }
 
@@ -392,6 +372,18 @@ public class AIEngineServiceImpl implements AIEngineService {
 
             return (String) partsList.get(0).get("text");
 
+        } catch (HttpServerErrorException e) {
+            // Catch HTTP 5xx errors specifically
+            if (e.getStatusCode().value() == 503) {
+                String responseBody = e.getResponseBodyAsString();
+                log.warn("Google Gemini API returned 503: {}", responseBody);
+                throw new AIServiceUnavailableException("Google Gemini API is experiencing high demand. Status: 503 Service Unavailable. " +
+                        "Response: " + responseBody);
+            }
+            throw e;
+        } catch (AIServiceUnavailableException e) {
+            // Re-throw our custom exception for fallback handling
+            throw e;
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("401")) {
                 throw new RuntimeException("Invalid API key - Authentication failed with Google Gemini");
@@ -625,5 +617,30 @@ public class AIEngineServiceImpl implements AIEngineService {
             log.error("{}", error);
             return error;
         }
+    }
+
+    /**
+     * Custom exception for AI service unavailability (503 errors)
+     * Triggers graceful fallback to standard response
+     */
+    private static class AIServiceUnavailableException extends Exception {
+        public AIServiceUnavailableException(String message) {
+            super(message);
+        }
+
+    }
+}
+
+/**
+ * Public exception class for AI Service Unavailability
+ * Can be imported and caught by other services
+ */
+class PublicAIServiceUnavailableException extends Exception {
+    public PublicAIServiceUnavailableException(String message) {
+        super(message);
+    }
+    
+    public PublicAIServiceUnavailableException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
