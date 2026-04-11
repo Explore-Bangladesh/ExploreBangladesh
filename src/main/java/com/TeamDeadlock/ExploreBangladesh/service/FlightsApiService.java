@@ -2,13 +2,14 @@ package com.TeamDeadlock.ExploreBangladesh.service;
 
 import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchRequest;
 import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchResponse;
-import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchResponse.*;
+import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchResponse.FlightOffer;
+import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchResponse.Itinerary;
+import com.TeamDeadlock.ExploreBangladesh.dto.FlightSearchResponse.Segment;
 import com.TeamDeadlock.ExploreBangladesh.entity.Airline;
 import com.TeamDeadlock.ExploreBangladesh.entity.Airport;
 import com.TeamDeadlock.ExploreBangladesh.repository.AirlineRepository;
 import com.TeamDeadlock.ExploreBangladesh.repository.AirportRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,21 +19,21 @@ import java.util.stream.Collectors;
 @Service
 public class FlightsApiService {
 
-    @Value("${amadeus.api.key}")
-    private String amadeusApiKey;
+    @Value("${flightapi.api.key}")
+    private String flightApiKey;
 
-    @Value("${amadeus.api.secret}")
-    private String amadeusApiSecret;
-
-    @Value("${amadeus.base-url}")
+    @Value("${flightapi.base-url}")
     private String baseUrl;
+
+    @Value("${flightapi.currency:BDT}")
+    private String currency;
+
+    @Value("${flightapi.region:BD}")
+    private String region;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final AirportRepository airportRepository;
     private final AirlineRepository airlineRepository;
-
-    private String accessToken;
-    private long tokenExpiry = 0;
 
     public FlightsApiService(AirportRepository airportRepository,
                              AirlineRepository airlineRepository) {
@@ -40,254 +41,309 @@ public class FlightsApiService {
         this.airlineRepository = airlineRepository;
     }
 
-    /** Build an in-memory lookup map from the airports table. */
     private Map<String, String> getAirportNames() {
         return airportRepository.findAll().stream()
                 .collect(Collectors.toMap(Airport::getIataCode, Airport::getName));
     }
 
-    /** Build an in-memory lookup map from the airlines table. */
     private Map<String, String> getAirlineNames() {
         return airlineRepository.findAll().stream()
                 .collect(Collectors.toMap(Airline::getCode, Airline::getName));
     }
 
-    /**
-     * Get OAuth2 access token from Amadeus
-     */
-    private String getAccessToken() {
-        if (accessToken != null && System.currentTimeMillis() < tokenExpiry) {
-            return accessToken;
-        }
-
-        String tokenUrl = baseUrl + "/v1/security/oauth2/token";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        String body = "grant_type=client_credentials&client_id=" + amadeusApiKey 
-                    + "&client_secret=" + amadeusApiSecret;
-
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
-
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.postForObject(tokenUrl, request, Map.class);
-            
-            accessToken = (String) response.get("access_token");
-            int expiresIn = (Integer) response.get("expires_in");
-            tokenExpiry = System.currentTimeMillis() + (expiresIn * 1000) - 60000; // Refresh 1 min early
-            
-            System.out.println("Got Amadeus access token, expires in " + expiresIn + " seconds");
-            return accessToken;
-            
-        } catch (Exception e) {
-            System.err.println("Failed to get Amadeus token: " + e.getMessage());
-            throw new RuntimeException("Failed to authenticate with Amadeus API", e);
-        }
-    }
-
-    /**
-     * Search for flights using Amadeus Flight Offers API
-     */
     public FlightSearchResponse searchFlights(FlightSearchRequest request) {
-        String token = getAccessToken();
-
-        // Build API URL
-        StringBuilder urlBuilder = new StringBuilder(baseUrl);
-        urlBuilder.append("/v2/shopping/flight-offers?");
-        urlBuilder.append("originLocationCode=").append(request.getOrigin());
-        urlBuilder.append("&destinationLocationCode=").append(request.getDestination());
-        urlBuilder.append("&departureDate=").append(request.getDepartureDate());
-        urlBuilder.append("&adults=").append(request.getAdults() != null ? request.getAdults() : 1);
-        
-        if (request.getReturnDate() != null && !request.getReturnDate().isEmpty()) {
-            urlBuilder.append("&returnDate=").append(request.getReturnDate());
-        }
-        
-        if (request.getTravelClass() != null && !request.getTravelClass().isEmpty()) {
-            urlBuilder.append("&travelClass=").append(request.getTravelClass());
-        }
-        
-        if (request.getNonStop() != null && request.getNonStop()) {
-            urlBuilder.append("&nonStop=true");
-        }
-        
-        urlBuilder.append("&max=50"); // Limit results
-        urlBuilder.append("&currencyCode=BDT"); // Bangladesh Taka
-
-        String url = urlBuilder.toString();
-        System.out.println("Amadeus API URL: " + url);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
         try {
-            ResponseEntity<Map> responseEntity = restTemplate.exchange(
-                url, HttpMethod.GET, entity, Map.class
-            );
+            String cabinClass = mapCabinClass(request.getTravelClass());
+            String url;
 
-            Map<String, Object> response = responseEntity.getBody();
-            return parseFlightResponse(response);
+            if (request.getReturnDate() != null && !request.getReturnDate().isBlank()) {
+                url = String.format(
+                        "%s/roundtrip/%s/%s/%s/%s/%s/%d/%d/%d/%s/%s",
+                        baseUrl,
+                        flightApiKey,
+                        request.getOrigin(),
+                        request.getDestination(),
+                        request.getDepartureDate(),
+                        request.getReturnDate(),
+                        request.getAdults() != null ? request.getAdults() : 1,
+                        0,
+                        0,
+                        cabinClass,
+                        currency
+                );
+            } else {
+                url = String.format(
+                        "%s/onewaytrip/%s/%s/%s/%s/%d/%d/%d/%s/%s",
+                        baseUrl,
+                        flightApiKey,
+                        request.getOrigin(),
+                        request.getDestination(),
+                        request.getDepartureDate(),
+                        request.getAdults() != null ? request.getAdults() : 1,
+                        0,
+                        0,
+                        cabinClass,
+                        currency
+                );
+            }
+
+            System.out.println("FlightAPI URL: " + url);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+
+            return parseFlightApiResponse(response, request);
 
         } catch (Exception e) {
             System.err.println("Flight search error: " + e.getMessage());
             e.printStackTrace();
-            
+
             FlightSearchResponse errorResponse = new FlightSearchResponse();
             errorResponse.setFlights(new ArrayList<>());
             errorResponse.setTotalResults(0);
+            errorResponse.setCurrency(currency);
             return errorResponse;
         }
     }
 
-    /**
-     * Parse Amadeus API response into our DTO
-     */
     @SuppressWarnings("unchecked")
-    private FlightSearchResponse parseFlightResponse(Map<String, Object> response) {
+    private FlightSearchResponse parseFlightApiResponse(Map<String, Object> response, FlightSearchRequest request) {
         FlightSearchResponse result = new FlightSearchResponse();
         List<FlightOffer> flights = new ArrayList<>();
 
-        // Load reference data from database for this request
         Map<String, String> airportNames = getAirportNames();
         Map<String, String> airlineNames = getAirlineNames();
 
-        List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
-        Map<String, Object> dictionaries = (Map<String, Object>) response.get("dictionaries");
-        Map<String, String> carriers = dictionaries != null ?
-            (Map<String, String>) dictionaries.get("carriers") : new HashMap<>();
+        List<Map<String, Object>> itinerariesData = (List<Map<String, Object>>) response.get("itineraries");
+        List<Map<String, Object>> legsData = (List<Map<String, Object>>) response.get("legs");
+        List<Map<String, Object>> segmentsData = (List<Map<String, Object>>) response.get("segments");
+        List<Map<String, Object>> placesData = (List<Map<String, Object>>) response.get("places");
+        List<Map<String, Object>> carriersData = (List<Map<String, Object>>) response.get("carriers");
 
-        if (data != null) {
-            for (Map<String, Object> offer : data) {
-                FlightOffer flightOffer = new FlightOffer();
-                
-                flightOffer.setId((String) offer.get("id"));
-                
-                // Parse price
-                Map<String, Object> price = (Map<String, Object>) offer.get("price");
-                flightOffer.setPrice((String) price.get("grandTotal"));
-                flightOffer.setCurrency((String) price.get("currency"));
-                
-                // Parse itineraries
-                List<Map<String, Object>> itinerariesData = 
-                    (List<Map<String, Object>>) offer.get("itineraries");
-                List<Itinerary> itineraries = new ArrayList<>();
-                
-                int totalStops = 0;
-                String mainCarrier = "";
-                
-                for (Map<String, Object> itin : itinerariesData) {
-                    Itinerary itinerary = new Itinerary();
-                    itinerary.setDuration(formatDuration((String) itin.get("duration")));
-                    
-                    List<Map<String, Object>> segmentsData = 
-                        (List<Map<String, Object>>) itin.get("segments");
-                    List<Segment> segments = new ArrayList<>();
-                    
-                    totalStops += segmentsData.size() - 1;
-                    
-                    for (Map<String, Object> seg : segmentsData) {
-                        Segment segment = new Segment();
-                        
-                        Map<String, Object> departure = (Map<String, Object>) seg.get("departure");
-                        Map<String, Object> arrival = (Map<String, Object>) seg.get("arrival");
-                        
-                        String depCode = (String) departure.get("iataCode");
-                        String arrCode = (String) arrival.get("iataCode");
-                        
-                        segment.setDepartureAirport(depCode);
-                        segment.setDepartureCity(airportNames.getOrDefault(depCode, depCode));
-                        segment.setDepartureTime(formatDateTime((String) departure.get("at")));
-
-                        segment.setArrivalAirport(arrCode);
-                        segment.setArrivalCity(airportNames.getOrDefault(arrCode, arrCode));
-                        segment.setArrivalTime(formatDateTime((String) arrival.get("at")));
-
-                        String carrierCode = (String) seg.get("carrierCode");
-                        segment.setCarrierCode(carrierCode);
-                        // Amadeus live dictionary takes priority, then our airline table
-                        segment.setCarrierName(carriers.getOrDefault(carrierCode,
-                            airlineNames.getOrDefault(carrierCode, carrierCode)));
-
-                        if (mainCarrier.isEmpty()) {
-                            mainCarrier = carrierCode;
-                        }
-                        
-                        segment.setFlightNumber(carrierCode + seg.get("number"));
-                        segment.setDuration(formatDuration((String) seg.get("duration")));
-                        
-                        Map<String, Object> aircraft = (Map<String, Object>) seg.get("aircraft");
-                        if (aircraft != null) {
-                            segment.setAircraft((String) aircraft.get("code"));
-                        }
-                        
-                        segments.add(segment);
-                    }
-                    
-                    itinerary.setSegments(segments);
-                    itineraries.add(itinerary);
-                }
-                
-                flightOffer.setItineraries(itineraries);
-                flightOffer.setNumberOfStops(totalStops);
-                flightOffer.setAirline(mainCarrier);
-                flightOffer.setAirlineName(carriers.getOrDefault(mainCarrier,
-                    airlineNames.getOrDefault(mainCarrier, mainCarrier)));
-                
-                flights.add(flightOffer);
+        Map<String, Map<String, Object>> legsById = new HashMap<>();
+        if (legsData != null) {
+            for (Map<String, Object> leg : legsData) {
+                legsById.put(String.valueOf(leg.get("id")), leg);
             }
+        }
+
+        Map<String, Map<String, Object>> segmentsById = new HashMap<>();
+        if (segmentsData != null) {
+            for (Map<String, Object> segment : segmentsData) {
+                segmentsById.put(String.valueOf(segment.get("id")), segment);
+            }
+        }
+
+        Map<String, Map<String, Object>> placesById = new HashMap<>();
+        if (placesData != null) {
+            for (Map<String, Object> place : placesData) {
+                placesById.put(String.valueOf(place.get("id")), place);
+            }
+        }
+
+        Map<String, Map<String, Object>> carriersById = new HashMap<>();
+        if (carriersData != null) {
+            for (Map<String, Object> carrier : carriersData) {
+                carriersById.put(String.valueOf(carrier.get("id")), carrier);
+            }
+        }
+
+        if (itinerariesData != null) {
+            for (Map<String, Object> itineraryData : itinerariesData) {
+                FlightOffer offer = new FlightOffer();
+                offer.setId(String.valueOf(itineraryData.get("id")));
+
+                List<Map<String, Object>> pricingOptions =
+                        (List<Map<String, Object>>) itineraryData.get("pricing_options");
+
+                if (pricingOptions != null && !pricingOptions.isEmpty()) {
+                    Map<String, Object> firstPricing = pricingOptions.get(0);
+                    Map<String, Object> priceObj = (Map<String, Object>) firstPricing.get("price");
+                    if (priceObj != null && priceObj.get("amount") != null) {
+                        offer.setPrice(String.valueOf(priceObj.get("amount")));
+                    } else {
+                        offer.setPrice("0");
+                    }
+                } else {
+                    offer.setPrice("0");
+                }
+
+                offer.setCurrency(currency);
+
+                List<String> legIds = (List<String>) itineraryData.get("leg_ids");
+                List<Itinerary> mappedItineraries = new ArrayList<>();
+                int totalStops = 0;
+                String mainCarrierCode = "";
+                String mainCarrierName = "";
+
+                if (legIds != null) {
+                    for (String legId : legIds) {
+                        Map<String, Object> leg = legsById.get(String.valueOf(legId));
+                        if (leg == null) continue;
+
+                        Itinerary mappedItinerary = new Itinerary();
+                        mappedItinerary.setDuration(formatDurationMinutes((Number) leg.get("duration")));
+
+                        List<String> segmentIds = (List<String>) leg.get("segment_ids");
+                        List<Segment> mappedSegments = new ArrayList<>();
+
+                        if (segmentIds != null) {
+                            totalStops += Math.max(segmentIds.size() - 1, 0);
+
+                            for (String segmentId : segmentIds) {
+                                Map<String, Object> segmentData = segmentsById.get(String.valueOf(segmentId));
+                                if (segmentData == null) continue;
+
+                                Segment segment = new Segment();
+
+                                String originPlaceId = String.valueOf(segmentData.get("origin_place_id"));
+                                String destinationPlaceId = String.valueOf(segmentData.get("destination_place_id"));
+
+                                Map<String, Object> originPlace = placesById.get(originPlaceId);
+                                Map<String, Object> destinationPlace = placesById.get(destinationPlaceId);
+
+                                String originCode = getPlaceCode(originPlace);
+                                String destinationCode = getPlaceCode(destinationPlace);
+
+                                segment.setDepartureAirport(originCode);
+                                segment.setArrivalAirport(destinationCode);
+
+                                segment.setDepartureCity(
+                                        airportNames.getOrDefault(originCode, getPlaceName(originPlace, originCode))
+                                );
+                                segment.setArrivalCity(
+                                        airportNames.getOrDefault(destinationCode, getPlaceName(destinationPlace, destinationCode))
+                                );
+
+                                segment.setDepartureTime(formatDateTime(String.valueOf(segmentData.get("departure"))));
+                                segment.setArrivalTime(formatDateTime(String.valueOf(segmentData.get("arrival"))));
+
+                                String flightNumber = String.valueOf(segmentData.get("marketing_flight_number"));
+                                Object carrierId = segmentData.get("marketing_carrier_id");
+
+                                String carrierCode = resolveCarrierCode(carrierId, carriersById);
+                                String carrierName = resolveCarrierName(carrierId, carriersById, airlineNames, carrierCode);
+
+                                segment.setCarrierCode(carrierCode);
+                                segment.setCarrierName(carrierName);
+                                segment.setFlightNumber(carrierCode + flightNumber);
+                                segment.setDuration(formatDurationMinutes((Number) segmentData.get("duration")));
+                                segment.setAircraft("");
+                                segment.setCabinClass(mapCabinClass(request.getTravelClass()));
+
+                                if (mainCarrierCode.isEmpty()) {
+                                    mainCarrierCode = carrierCode;
+                                    mainCarrierName = carrierName;
+                                }
+
+                                mappedSegments.add(segment);
+                            }
+                        }
+
+                        mappedItinerary.setSegments(mappedSegments);
+                        mappedItineraries.add(mappedItinerary);
+                    }
+                }
+
+                offer.setItineraries(mappedItineraries);
+                offer.setNumberOfStops(totalStops);
+                offer.setAirline(mainCarrierCode);
+                offer.setAirlineName(mainCarrierName.isBlank() ? mainCarrierCode : mainCarrierName);
+                offer.setInstantTicketingRequired(false);
+
+                flights.add(offer);
+            }
+        }
+
+        if (Boolean.TRUE.equals(request.getNonStop())) {
+            flights = flights.stream()
+                    .filter(f -> f.getNumberOfStops() == 0)
+                    .collect(Collectors.toList());
         }
 
         result.setFlights(flights);
         result.setTotalResults(flights.size());
-        result.setCurrency("BDT");
-
+        result.setCurrency(currency);
         return result;
     }
 
-    /**
-     * Format ISO duration (PT2H30M) to readable format (2h 30m)
-     */
-    private String formatDuration(String isoDuration) {
-        if (isoDuration == null || !isoDuration.startsWith("PT")) {
-            return isoDuration;
-        }
-        
-        String duration = isoDuration.substring(2);
-        StringBuilder result = new StringBuilder();
-        
-        int hIndex = duration.indexOf('H');
-        if (hIndex > 0) {
-            result.append(duration.substring(0, hIndex)).append("h ");
-            duration = duration.substring(hIndex + 1);
-        }
-        
-        int mIndex = duration.indexOf('M');
-        if (mIndex > 0) {
-            result.append(duration.substring(0, mIndex)).append("m");
-        }
-        
-        return result.toString().trim();
+    private String mapCabinClass(String travelClass) {
+        if (travelClass == null || travelClass.isBlank()) return "Economy";
+
+        return switch (travelClass.toUpperCase()) {
+            case "BUSINESS" -> "Business";
+            case "FIRST" -> "First";
+            case "PREMIUM_ECONOMY" -> "Premium_Economy";
+            default -> "Economy";
+        };
     }
 
-    /**
-     * Format datetime to readable format
-     */
+    private String getPlaceCode(Map<String, Object> place) {
+        if (place == null) return "";
+        Object code = place.get("iata");
+        if (code == null) code = place.get("iata_code");
+        if (code == null) code = place.get("display_code");
+        if (code == null) code = place.get("sky_code");
+        return code != null ? String.valueOf(code) : "";
+    }
+
+    private String getPlaceName(Map<String, Object> place, String fallback) {
+        if (place == null) return fallback;
+        Object name = place.get("name");
+        return name != null ? String.valueOf(name) : fallback;
+    }
+
+    private String resolveCarrierCode(Object carrierId,
+                                      Map<String, Map<String, Object>> carriersById) {
+        if (carrierId == null) return "";
+        Map<String, Object> carrier = carriersById.get(String.valueOf(carrierId));
+        if (carrier == null) return String.valueOf(carrierId);
+
+        Object code = carrier.get("iata");
+        if (code == null) code = carrier.get("iata_code");
+        if (code == null) code = carrier.get("display_code");
+        if (code == null) code = carrier.get("code");
+        if (code == null) code = carrier.get("name");
+
+        return code != null ? String.valueOf(code) : String.valueOf(carrierId);
+    }
+
+    private String resolveCarrierName(Object carrierId,
+                                      Map<String, Map<String, Object>> carriersById,
+                                      Map<String, String> airlineNames,
+                                      String fallbackCode) {
+        if (carrierId == null) return fallbackCode;
+        Map<String, Object> carrier = carriersById.get(String.valueOf(carrierId));
+        if (carrier == null) return airlineNames.getOrDefault(fallbackCode, fallbackCode);
+
+        Object name = carrier.get("name");
+        if (name != null) return String.valueOf(name);
+
+        return airlineNames.getOrDefault(fallbackCode, fallbackCode);
+    }
+
+    private String formatDurationMinutes(Number minutes) {
+        if (minutes == null) return "";
+        int total = minutes.intValue();
+        int h = total / 60;
+        int m = total % 60;
+
+        if (h > 0 && m > 0) return h + "h " + m + "m";
+        if (h > 0) return h + "h";
+        return m + "m";
+    }
+
     private String formatDateTime(String isoDateTime) {
-        if (isoDateTime == null) return "";
-        // Input: 2024-01-28T10:30:00 -> Output: 10:30
+        if (isoDateTime == null || isoDateTime.isBlank()) return "";
         if (isoDateTime.contains("T")) {
-            String time = isoDateTime.split("T")[1];
-            return time.substring(0, 5);
+            String[] parts = isoDateTime.split("T");
+            if (parts.length > 1 && parts[1].length() >= 5) {
+                return parts[1].substring(0, 5);
+            }
         }
         return isoDateTime;
     }
 
-    /** Get list of supported airports from the database */
     public Map<String, String> getSupportedAirports() {
         return getAirportNames();
     }
