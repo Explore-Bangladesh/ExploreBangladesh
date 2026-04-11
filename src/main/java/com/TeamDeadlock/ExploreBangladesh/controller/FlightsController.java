@@ -55,7 +55,7 @@ public class FlightsController {
         FlightSearchRequest req = new FlightSearchRequest();
         req.setOrigin("DAC");
         req.setDestination("CXB");
-        req.setDepartureDate("2026-02-15");
+        req.setDepartureDate("2026-05-15");
         req.setAdults(1);
         return ResponseEntity.ok(flightsApiService.searchFlights(req));
     }
