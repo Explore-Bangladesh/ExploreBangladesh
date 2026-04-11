@@ -3,7 +3,7 @@ let base64Image = null;
 function getDefaultAvatarSrc() {
         const avatarImg = document.getElementById('avatarImg');
         const currentSrc = avatarImg?.getAttribute('src');
-        return currentSrc || 'Assets/default_user.jpg';
+        return currentSrc || '/Assets/default_user.jpg';
 }
 
 function ensureProfileModal() {
@@ -90,6 +90,9 @@ function ensureProfileModal() {
 
         modalElement = wrapper.firstElementChild;
         document.body.appendChild(modalElement);
+        console.log('Profile modal injected into DOM');
+        console.log('Modal in DOM:', document.getElementById('profileModal') !== null);
+        console.log('Modal classes:', modalElement?.className);
         return modalElement;
 }
 
@@ -114,7 +117,7 @@ async function updateNavbar() {
         // Hide login/signup buttons
         loginBtn.classList.add('d-none');
         signupBtn.classList.add('d-none');
-        
+
         // Show user menu
         userMenuDiv.classList.remove('d-none');
         userMenuDiv.style.display = 'block';
@@ -147,10 +150,10 @@ async function updateNavbar() {
         } catch (error) {
             console.error('Error loading profile:', error);
         }
-        
+
         // Initialize dropdown after showing user menu
         initAvatarDropdown();
-        
+
     } else {
         console.log('No token - showing login buttons');
         loginBtn.classList.remove('d-none');
@@ -173,32 +176,32 @@ function initAvatarDropdown() {
 
     const avatarBtn = document.getElementById('avatarBtn');
     const dropdownMenu = document.getElementById('avatarDropdown');
-    
+
     if (!avatarBtn || !dropdownMenu) {
         console.log('Avatar button or dropdown not found');
         return;
     }
-    
+
     // Remove any existing event listeners by cloning
     const newAvatarBtn = avatarBtn.cloneNode(true);
     avatarBtn.parentNode.replaceChild(newAvatarBtn, avatarBtn);
-    
+
     // Get fresh references after replacement
     const freshAvatarBtn = document.getElementById('avatarBtn');
     const freshDropdownMenu = document.getElementById('avatarDropdown');
-    
+
     if (!freshAvatarBtn || !freshDropdownMenu) {
         console.error('Failed to get fresh references after cloning');
         return;
     }
-    
+
     // Avatar button click handler - toggles dropdown
     freshAvatarBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         console.log('Avatar clicked - toggling dropdown');
-        
+
         // Toggle the dropdown
         if (freshDropdownMenu.classList.contains('show')) {
             freshDropdownMenu.classList.remove('show');
@@ -214,7 +217,7 @@ function initAvatarDropdown() {
             this.setAttribute('aria-expanded', 'true');
         }
     });
-    
+
     // Close dropdown when clicking outside - single global handler
     // This replaces the previous approach to avoid duplicate listeners
     document.addEventListener('click', function closeDropdownOnOutsideClick(e) {
@@ -223,7 +226,7 @@ function initAvatarDropdown() {
             freshAvatarBtn.setAttribute('aria-expanded', 'false');
         }
     });
-    
+
     // Mark as initialized
     avatarDropdownInitialized = true;
     console.log('Avatar dropdown initialized successfully');
@@ -290,8 +293,50 @@ async function openProfileModal() {
             if (profileError) profileError.classList.add('d-none');
 
             // Show modal
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
+            console.log('Modal element:', modalElement);
+            console.log('Modal ID:', modalElement?.id);
+            console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
+
+            try {
+                if (!bootstrap) {
+                    console.error('Bootstrap is not available!');
+                    return;
+                }
+
+                setTimeout(() => {
+                    try {
+                        const modal = new bootstrap.Modal(modalElement, {
+                            backdrop: 'static',
+                            keyboard: true
+                        });
+                        console.log('Bootstrap modal instance created');
+                        modal.show();
+                        console.log('Modal show() called successfully');
+
+                        // Check if backdrop exists
+                        setTimeout(() => {
+                            const backdrop = document.querySelector('.modal-backdrop');
+                            console.log('Modal backdrop exists:', backdrop !== null);
+                            if (backdrop) {
+                                console.log('Backdrop classes:', backdrop.className);
+                                console.log('Backdrop display:', window.getComputedStyle(backdrop).display);
+                            }
+
+                            // Check modal visibility
+                            console.log('Modal display style:', window.getComputedStyle(modalElement).display);
+                            console.log('Modal visibility:', window.getComputedStyle(modalElement).visibility);
+                            console.log('Modal z-index:', window.getComputedStyle(modalElement).zIndex);
+                        }, 200);
+                    } catch (innerError) {
+                        console.error('Error in modal.show():', innerError);
+                        throw innerError;
+                    }
+                }, 100);
+            } catch (modalError) {
+                console.error('Error showing modal:', modalError);
+                console.error('Modal error stack:', modalError.stack);
+                alert('Failed to open profile modal. Check console for details.');
+            }
         } else {
             alert('Failed to load profile. Status: ' + response.status);
         }
@@ -345,7 +390,7 @@ async function saveProfile() {
 
         if (response.ok) {
             const updatedUser = await response.json();
-            
+
             // Update navbar avatar
             const avatarImg = document.getElementById('avatarImg');
             if (avatarImg) {
@@ -390,7 +435,7 @@ async function logout() {
         } finally {
             // Clear all localStorage
             localStorage.clear();
-            
+
             // Redirect to home page
             window.location.href = '/';
         }
@@ -401,7 +446,7 @@ async function logout() {
 function handleOAuthCallback() {
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');
-    
+
     if (tokenFromUrl) {
         localStorage.setItem('token', tokenFromUrl);
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -414,16 +459,16 @@ function handleOAuthCallback() {
 // DOM Content Loaded
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM loaded - initializing navbar');
-    
+
     // Handle OAuth callback
     handleOAuthCallback();
-    
+
     // Update navbar
     await updateNavbar();
 
     // Ensure modal exists for pages without inline modal markup.
     ensureProfileModal();
-    
+
     // Profile link click handler
     const profileLink = document.getElementById('profileLink');
     if (profileLink) {
@@ -432,7 +477,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.stopPropagation();
             console.log('Profile link clicked');
             await openProfileModal();
-            
+
             // Close dropdown after clicking
             const dropdownMenu = document.getElementById('avatarDropdown');
             if (dropdownMenu) {
@@ -440,7 +485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
-    
+
     // Logout link click handler
     const logoutLink = document.getElementById('logoutLink');
     if (logoutLink) {
@@ -451,7 +496,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await logout();
         });
     }
-    
+
     // Image upload handler
     const imageUpload = document.getElementById('imageUpload');
     if (imageUpload) {
@@ -470,7 +515,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
-    
+
     // Save profile button
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     if (saveProfileBtn) {
@@ -478,7 +523,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await saveProfile();
         });
     }
-    
+
     // Initialize dropdown
     initAvatarDropdown();
 });
