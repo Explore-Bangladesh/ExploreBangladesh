@@ -317,56 +317,6 @@
 }
 
 /* ========================================
-   Modal Styles
-   ======================================== */
-
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-    background-color: white;
-    margin: 5% auto;
-    padding: 20px;
-    border-radius: 12px;
-    width: 80%;
-    max-width: 500px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    position: relative;
-}
-
-.modal-close {
-    position: absolute;
-    right: 15px;
-    top: 10px;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    color: var(--text-light);
-}
-
-.modal-close:hover {
-    color: var(--text-dark);
-}
-
-.modal-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.modal-actions .btn {
-    flex: 1;
-}
-
-/* ========================================
    Responsive Design
    ======================================== */
 
