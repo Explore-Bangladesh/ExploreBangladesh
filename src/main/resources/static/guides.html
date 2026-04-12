@@ -87,29 +87,54 @@
 .carousel-caption {
   bottom: 30px;
   opacity: 1;
+  z-index: 10;
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background-color: transparent !important;
 }
 
 .carousel-caption h2 {
   font-size: 32px;
   text-shadow: 0 2px 10px rgba(0,0,0,0.7);
   opacity: 1;
+  margin-bottom: 15px;
 }
 
 .carousel-caption .btn {
   opacity: 1;
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: white !important;
+  font-weight: 600;
+  padding: 10px 20px;
+  z-index: 20;
+  position: relative;
+}
+
+.carousel-caption .btn:hover {
+  opacity: 0.9;
+  background-color: #0b5ed7 !important;
 }
 
 .carousel-item::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+  background: linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0.2));
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
 }
 
 .carousel-item {
   transition: opacity 0.6s ease-in-out;
+  position: relative;
+}
+
+.carousel-item > img {
+  position: relative;
+  z-index: 1;
 }
 .card {
   max-width: 700px;
@@ -148,6 +173,7 @@
   position: absolute;
   z-index: 10;
   cursor: pointer;
+  pointer-events: none;
 }
 
 .carousel-control-prev {
