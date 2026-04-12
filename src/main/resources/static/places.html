@@ -645,6 +645,7 @@
       document.getElementById('resultsHeader').classList.add('d-none');
       
       currentLocation = location;
+      window.currentSearchLocation = location;  // Make accessible to modal
       const sortBy = document.getElementById('sortBy') ? document.getElementById('sortBy').value : '';
       const searchQuery = document.getElementById('searchQuery') ? document.getElementById('searchQuery').value : '';
 

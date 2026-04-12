@@ -63,11 +63,11 @@ function showDetailsModal(place) {
   };
   document.getElementById('modalPlaceDescription').textContent = place.description;
 
-  // Create dynamic links with correct parameter names for each page
-  const locationName = place.name.split(',')[0].trim();
-  document.getElementById('modalCarLink').href = `cars.html?location=${encodeURIComponent(locationName)}`;
-  document.getElementById('modalHotelLink').href = `hotels.html?destination=${encodeURIComponent(locationName)}`;
-  document.getElementById('modalGuideLink').href = `guides.html?city=${encodeURIComponent(locationName)}`;
+  // Create dynamic links - use district from search, not the place name
+  const searchDistrict = window.currentSearchLocation || place.name.split(',')[0].trim();
+  document.getElementById('modalCarLink').href = `cars.html?location=${encodeURIComponent(searchDistrict)}`;
+  document.getElementById('modalHotelLink').href = `hotels.html?destination=${encodeURIComponent(searchDistrict)}`;
+  document.getElementById('modalGuideLink').href = `guides.html?city=${encodeURIComponent(searchDistrict)}`;
   
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name)}`;
   document.getElementById('modalHowToGoLink').href = googleMapsUrl;
